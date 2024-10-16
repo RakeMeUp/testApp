@@ -7,7 +7,6 @@ namespace Backend.Models
     public class QuestionGetDTO
     {
         public long QuestionId { get; set; }
-        public long TestId { get; set; }
         public string QuestionText { get; set; }
         public float MaxGrade { get; set; }
         public QuestionGradeGetDTO QuestionGrade { get; set; }

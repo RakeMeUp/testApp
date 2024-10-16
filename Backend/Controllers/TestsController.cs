@@ -8,11 +8,26 @@
     using Microsoft.AspNetCore.Mvc;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using static System.Net.Mime.MediaTypeNames;
 
     [ApiController]
     [Route("api/[controller]")]
     public class TestsController(IMapper mapper, ITestRepository testRepository, IUserRepository userRepository, IUserTestRepository userTestRepository) : ControllerBase
     {
+        [HttpPost]
+        public async Task<ActionResult> CreateTest([FromBody] TestPostDTO dto)
+        {
+            var owner = await userRepository.GetCurrentUserAsync();
+            if (owner is null)
+            {
+                return Unauthorized();
+            }
+
+            var testEntity = mapper.Map<Test>(dto);
+            testEntity.Owner = owner;
+            await testRepository.CreateTestAsync(testEntity);
+            return NoContent();
+        }
         [HttpGet("{id}")]
         public async Task<ActionResult<TestGetDTO>> GetTest([FromRoute] long id)
         {
