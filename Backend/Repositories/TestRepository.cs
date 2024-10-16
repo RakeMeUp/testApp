@@ -47,6 +47,7 @@ namespace Backend.Repositories
             return await _context.Tests
                 .Where(t=>t.TestId == testId)
                 .Include(t => t.Questions)
+                .Include(t=> t.ParticipatingUsers)
                 .FirstOrDefaultAsync() ?? throw new Exception($"Test not found: {testId}");
         }
         public async Task<Test> GetMinimalTestAsync(long testId)
@@ -61,6 +62,18 @@ namespace Backend.Repositories
             return await _context.Tests
                 .Where(t => t.OwnerId == ownerId)
                 .Include(t => t.Questions)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Test?>> GetTestsByParticipationAsync(long userId)
+        {
+            return await _context.UserParticipatedTests
+                .Where(up => up.UserId == userId)
+                .Include(up => up.Test)
+                    .ThenInclude(t => t.Questions)
+                .Include(up => up.Test) // ???
+                    .ThenInclude(t => t.ParticipatingUsers)
+                .Select(up => up.Test)
                 .ToListAsync();
         }
     }

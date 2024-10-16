@@ -36,6 +36,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 // REPOSITORIES
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITestRepository, TestRepository>();
+builder.Services.AddScoped<IUserTestRepository, UserTestRepository>();
 
 
 var app = builder.Build();

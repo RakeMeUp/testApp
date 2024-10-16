@@ -10,6 +10,7 @@ namespace Backend.Models
         public long OwnerId { get; set; }
         public ICollection<QuestionGetDTO> Questions { get; set; }
         public ICollection<UserTestResultGetDTO> TestResults { get; set; }
+        public ICollection<long> ParticipatedUserIDs { get; set; }
         // TODO: participated users (? perhaps?)
     }
 }
