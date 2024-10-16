@@ -6,6 +6,7 @@
 *.db
 *.db-shm
 *.db-wal
+appsettings.Secrets.json
 
 
 # User-specific files

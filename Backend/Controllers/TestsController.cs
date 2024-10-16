@@ -34,20 +34,6 @@
             return Ok(mapper.Map<IEnumerable<TestGetDTO>>(tests));
         }
 
-        [HttpPost]
-        public async Task<ActionResult> CreateTest([FromBody]TestPostDTO dto)
-        {
-            var owner = await userRepository.GetCurrentUserAsync();
-            if (owner is null)
-            {
-                return Unauthorized();
-            }
-
-            var testEntity = mapper.Map<Test>(dto);
-            testEntity.Owner = owner;
-            await testRepository.CreateTestAsync(testEntity);
-            return NoContent();
-        }
         [HttpPost("tests/{testId}/join")]
         public ActionResult JoinTest([FromRoute]long testId)
         {

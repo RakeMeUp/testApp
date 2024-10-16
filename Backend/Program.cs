@@ -4,6 +4,8 @@ using Backend.Repositories.Interfaces;
 using Backend.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Backend.Services.Interfaces;
+using Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +39,11 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITestRepository, TestRepository>();
 builder.Services.AddScoped<IUserTestRepository, UserTestRepository>();
+builder.Services.AddScoped<IAGIService, AGIService>();
+
+// Secrets
+builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
+
 
 
 var app = builder.Build();
