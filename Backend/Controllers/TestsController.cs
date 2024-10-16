@@ -1,54 +1,43 @@
 ﻿namespace Backend.Controllers
 {
     using AutoMapper;
-    using Backend.Contexts;
     using Backend.Entities;
     using Backend.Models;
     using Backend.Repositories.Interfaces;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
 
     [ApiController]
     [Route("api/[controller]")]
-    public class TestsController : ControllerBase
+    public class TestsController(IMapper mapper, ITestRepository testRepository, IUserRepository userRepository) : ControllerBase
     {
-        private readonly IMapper _mapper;
-        private readonly IUserRepository _userRepository;
-        private readonly ITestRepository _testRepository;
-
-        public TestsController(IMapper mapper, ITestRepository testRepository, IUserRepository userRepository)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Test>> GetTest([FromRoute] long id)
         {
-            _mapper = mapper;
-            _testRepository = testRepository;
-            _userRepository = userRepository;
+            var test = await testRepository.GetTestAsync(id);
+            return Ok(mapper.Map<TestGetDTO>(test));
         }
 
-        //[HttpGet]
-        //public async Task<ActionResult<IEnumerable<Test>>> GetTests()
-        //{
-
-        //}
-
-        //[HttpGet("{id}")]
-        //public async Task<ActionResult<Test>> GetTest(long id)
-        //{
-        //}
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<Test>> GetTestsByOwnerAsync([FromRoute] long userId)
+        {
+            var tests = await testRepository.GetTestsByOwnerAsync(userId);
+            return Ok(mapper.Map<IEnumerable<TestGetDTO>>(tests));
+        }
 
         [HttpPost]
         public async Task<ActionResult> CreateTest([FromBody]TestPostDTO dto)
         {
-            var owner = await _userRepository.GetCurrentUserAsync();
+            var owner = await userRepository.GetCurrentUserAsync();
             if (owner is null)
             {
                 return Unauthorized();
             }
 
-            var testEntity = _mapper.Map<Test>(dto);
+            var testEntity = mapper.Map<Test>(dto);
             testEntity.Owner = owner;
-            await _testRepository.CreateTestAsync(testEntity);
+            await testRepository.CreateTestAsync(testEntity);
             return Ok();
 
         }
@@ -58,10 +47,23 @@
         //{
         //}
 
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTest(long id)
-        //{
-        //}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTest([FromRoute]long id)
+        {
+            var ownerId = await userRepository.GetCurrentUserIdAsync();
+            if (ownerId is null)
+            {
+                return Unauthorized();
+            }
+            var test = await testRepository.GetMinimalTestAsync(id);
+            if (test.OwnerId != ownerId)
+            {
+                return Unauthorized();
+            }
+            testRepository.DeleteTest(id);
+            return NoContent();
+
+        }
     }
 
 }

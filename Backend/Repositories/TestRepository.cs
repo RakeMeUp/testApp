@@ -2,6 +2,7 @@
 using Backend.Entities;
 using Backend.Entities.Joins;
 using Backend.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Repositories
 {
@@ -17,6 +18,7 @@ namespace Backend.Repositories
             _context.Tests.Add(test);
             await _context.SaveChangesAsync();
 
+            // add to join table explicitly
             var userCreatedTest = new UserCreatedTest
             {
                 UserId = test.OwnerId,
@@ -24,6 +26,42 @@ namespace Backend.Repositories
             };
             _context.UserCreatedTests.Add(userCreatedTest);
             await _context.SaveChangesAsync();
+        }
+
+        public void DeleteTest(long testId)
+        {
+            var test = _context.Tests
+                .Include(t => t.CreatedByUsers)
+                .FirstOrDefault(t => t.TestId == testId) ?? throw new Exception($"Test not found: {testId}");
+
+            foreach (var t in test.CreatedByUsers.ToList())
+            {
+                _context.UserCreatedTests.Remove(t);
+            }
+            _context.Tests.Remove(test);
+            _context.SaveChanges();
+        }
+
+        public async Task<Test> GetTestAsync(long testId)
+        {
+            return await _context.Tests
+                .Where(t=>t.TestId == testId)
+                .Include(t => t.Questions)
+                .FirstOrDefaultAsync() ?? throw new Exception($"Test not found: {testId}");
+        }
+        public async Task<Test> GetMinimalTestAsync(long testId)
+        {
+            return await _context.Tests
+                .Where(t => t.TestId == testId)
+                .FirstOrDefaultAsync() ?? throw new Exception($"Test not found: {testId}");
+        }
+
+        public async Task<IEnumerable<Test?>> GetTestsByOwnerAsync(long ownerId)
+        {
+            return await _context.Tests
+                .Where(t => t.OwnerId == ownerId)
+                .Include(t => t.Questions)
+                .ToListAsync();
         }
     }
 }

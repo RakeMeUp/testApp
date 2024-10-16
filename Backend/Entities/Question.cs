@@ -11,7 +11,7 @@ namespace Backend.Entities
 
         [Required]
         public long TestId { get; set; }
-        public Test Test { get; set; } // Reference to the Test this question belongs to
+        public Test Test { get; set; }
 
         [Required]
         public string QuestionText { get; set; }

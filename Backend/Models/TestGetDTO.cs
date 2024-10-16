@@ -8,7 +8,8 @@ namespace Backend.Models
         public string TestTitle { get; set; }
         public string TestDescription { get; set; }
         public long OwnerId { get; set; }
-        public ICollection<Question> Questions { get; set; }
-        public ICollection<UserTestResult> TestResults { get; set; }
+        public ICollection<QuestionGetDTO> Questions { get; set; }
+        public ICollection<UserTestResultGetDTO> TestResults { get; set; }
+        // TODO: participated users (? perhaps?)
     }
 }

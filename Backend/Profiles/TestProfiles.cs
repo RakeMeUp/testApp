@@ -26,6 +26,10 @@
             // Optional: Reverse mappings if needed
             CreateMap<Test, TestPostDTO>()
                 .ForMember(dest => dest.Questions, opt => opt.MapFrom(src => src.Questions));
+            CreateMap<Test, TestGetDTO>();
+            CreateMap<Question, QuestionGetDTO>();
+            CreateMap<QuestionGrade, QuestionGradeGetDTO>();
+            CreateMap<UserTestResult, UserTestResultGetDTO>();
 
             CreateMap<Question, QuestionPostDTO>();
         }

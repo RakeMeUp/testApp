@@ -13,7 +13,6 @@ namespace Backend.Contexts
         {
         }
 
-        // DbSets for your entities
         public DbSet<Test> Tests { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<QuestionGrade> QuestionGrades { get; set; }
@@ -21,7 +20,6 @@ namespace Backend.Contexts
         public DbSet<UserCreatedTest> UserCreatedTests { get; set; }
         public DbSet<UserParticipatedTest> UserParticipatedTests { get; set; }
 
-        // You can also override OnModelCreating if needed
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,7 +38,6 @@ namespace Backend.Contexts
                 .WithMany(t => t.CreatedByUsers)
                 .HasForeignKey(uc => uc.TestId);
 
-            // Similar configuration for UserParticipatedTest
             modelBuilder.Entity<UserParticipatedTest>()
                 .HasKey(up => new { up.UserId, up.TestId });
 
@@ -53,6 +50,16 @@ namespace Backend.Contexts
                 .HasOne(up => up.Test)
                 .WithMany(t => t.ParticipatingUsers)
                 .HasForeignKey(up => up.TestId);
+
+            modelBuilder.Entity<Question>()
+            .HasOne(q => q.Test)
+            .WithMany(t => t.Questions)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserTestResult>()
+                .HasOne(utr => utr.Test)
+                .WithMany(t => t.TestResults)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 
