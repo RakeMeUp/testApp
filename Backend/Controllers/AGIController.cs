@@ -13,9 +13,9 @@ namespace Backend.Controllers
     public class AGIController(IAGIService AGIService) : ControllerBase
     {
         [HttpPost("test")]
-        public async Task<ActionResult<AGIResponseDTO>> TestAGI([FromBody] string prompt)
+        public async Task<ActionResult<AGIEvaluateResponseDTO>> TestAGI([FromBody] TestEvaluationDTO prompt)
         {
-            var resp = await AGIService.Grade(prompt);
+            var resp = await AGIService.Evaluate(prompt);
             return Ok(resp);
         }
     }

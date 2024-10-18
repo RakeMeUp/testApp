@@ -137,9 +137,18 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Entities.QuestionGrade", b =>
                 {
-                    b.Property<long>("GradeId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<long>("UserId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<long>("ResultId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("QuestionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("TEXT");
@@ -154,21 +163,11 @@ namespace Backend.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("QuestionId")
-                        .HasColumnType("INTEGER");
+                    b.HasKey("UserId", "ResultId", "QuestionId");
 
-                    b.Property<long>("ResultId")
-                        .HasColumnType("INTEGER");
+                    b.HasIndex("QuestionId");
 
-                    b.Property<long>("UserTestResultResultId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("GradeId");
-
-                    b.HasIndex("QuestionId")
-                        .IsUnique();
-
-                    b.HasIndex("UserTestResultResultId");
+                    b.HasIndex("ResultId");
 
                     b.ToTable("QuestionGrades");
                 });
@@ -404,14 +403,14 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.QuestionGrade", b =>
                 {
                     b.HasOne("Backend.Entities.Question", "Question")
-                        .WithOne("QuestionGrade")
-                        .HasForeignKey("Backend.Entities.QuestionGrade", "QuestionId")
+                        .WithMany("QuestionGrades")
+                        .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.Entities.UserTestResult", "UserTestResult")
                         .WithMany("QuestionGrades")
-                        .HasForeignKey("UserTestResultResultId")
+                        .HasForeignKey("ResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -512,8 +511,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Entities.Question", b =>
                 {
-                    b.Navigation("QuestionGrade")
-                        .IsRequired();
+                    b.Navigation("QuestionGrades");
                 });
 
             modelBuilder.Entity("Backend.Entities.Test", b =>

@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20241015234919_second")]
-    partial class second
+    [Migration("20241018205220_xd2")]
+    partial class xd2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -140,9 +140,21 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Entities.QuestionGrade", b =>
                 {
-                    b.Property<long>("GradeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<long>("UserId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnOrder(0);
+
+                    b.Property<long>("ResultId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnOrder(1);
+
+                    b.Property<long>("QuestionId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnOrder(2);
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("TEXT");
@@ -157,18 +169,19 @@ namespace Backend.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("QuestionId")
+                    b.Property<long?>("QuestionId1")
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("ResultId")
+                    b.Property<long?>("UserTestResultResultId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("UserTestResultResultId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("GradeId");
+                    b.HasKey("UserId", "ResultId", "QuestionId");
 
                     b.HasIndex("QuestionId");
+
+                    b.HasIndex("QuestionId1");
+
+                    b.HasIndex("ResultId");
 
                     b.HasIndex("UserTestResultResultId");
 
@@ -357,13 +370,13 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Joins.UserCreatedTest", b =>
                 {
                     b.HasOne("Backend.Entities.Test", "Test")
-                        .WithMany()
+                        .WithMany("CreatedByUsers")
                         .HasForeignKey("TestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.Entities.ApplicationUser", "User")
-                        .WithMany("UserCreatedTests")
+                        .WithMany("CreatedTests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -376,13 +389,13 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Joins.UserParticipatedTest", b =>
                 {
                     b.HasOne("Backend.Entities.Test", "Test")
-                        .WithMany()
+                        .WithMany("ParticipatingUsers")
                         .HasForeignKey("TestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.Entities.ApplicationUser", "User")
-                        .WithMany("UserParticipatedTests")
+                        .WithMany("ParticipatedTests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -406,16 +419,24 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.QuestionGrade", b =>
                 {
                     b.HasOne("Backend.Entities.Question", "Question")
-                        .WithMany("QuestionGrades")
+                        .WithMany()
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Backend.Entities.UserTestResult", "UserTestResult")
+                    b.HasOne("Backend.Entities.Question", null)
                         .WithMany("QuestionGrades")
-                        .HasForeignKey("UserTestResultResultId")
+                        .HasForeignKey("QuestionId1");
+
+                    b.HasOne("Backend.Entities.UserTestResult", "UserTestResult")
+                        .WithMany()
+                        .HasForeignKey("ResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Backend.Entities.UserTestResult", null)
+                        .WithMany("QuestionGrades")
+                        .HasForeignKey("UserTestResultResultId");
 
                     b.Navigation("Question");
 
@@ -425,7 +446,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Test", b =>
                 {
                     b.HasOne("Backend.Entities.ApplicationUser", "Owner")
-                        .WithMany("CreatedTests")
+                        .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -507,11 +528,9 @@ namespace Backend.Migrations
                 {
                     b.Navigation("CreatedTests");
 
+                    b.Navigation("ParticipatedTests");
+
                     b.Navigation("TestResults");
-
-                    b.Navigation("UserCreatedTests");
-
-                    b.Navigation("UserParticipatedTests");
                 });
 
             modelBuilder.Entity("Backend.Entities.Question", b =>
@@ -521,6 +540,10 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Entities.Test", b =>
                 {
+                    b.Navigation("CreatedByUsers");
+
+                    b.Navigation("ParticipatingUsers");
+
                     b.Navigation("Questions");
 
                     b.Navigation("TestResults");

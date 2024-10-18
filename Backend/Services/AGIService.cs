@@ -17,8 +17,9 @@ namespace Backend.Services
             client = new ChatClient(model: "gpt-4o", apiKey: _AGIApiKey);
         }
 
-        public async Task<AGIResponseDTO> Grade(string prompt)
+        public async Task<AGIEvaluateResponseDTO> Evaluate(TestEvaluationDTO dto)
         {
+            var prompt = AGIEvaluationConfig.DTOToPrompt(dto) ?? throw new ArgumentNullException(nameof(dto));
             List<ChatMessage> messages =
                 [
                     new UserChatMessage(prompt),
@@ -26,29 +27,30 @@ namespace Backend.Services
 
             ChatCompletionOptions options = new()
             {
-                ResponseFormat = TestEvaluationResponseFormat.CreateResponseFormat()
+                ResponseFormat = AGIEvaluationConfig.CreateResponseFormat()
             };
 
             ChatCompletion completion = await client.CompleteChatAsync(messages, options);
+            Console.WriteLine(completion.Content[0].Text);
 
             using JsonDocument structuredJson = JsonDocument.Parse(completion.Content[0].Text);
 
-            var dto = new AGIResponseDTO()
+            var resp = new AGIEvaluateResponseDTO()
             {
-                FinalGrade = structuredJson.RootElement.GetProperty("final_grade").GetSingle(),
-                Questions = new List<AGIResponseQuestionDTO>()
+                TestId = structuredJson.RootElement.GetProperty("test_id").GetInt64(),
+                Questions = []
             };
             foreach (var q in structuredJson.RootElement.GetProperty("questions").EnumerateArray())
             {
-                dto.Questions.Add(new AGIResponseQuestionDTO()
+                resp.Questions.Add(new AGIEvaluateResponseQuestionDTO()
                     {
+                        QuestionId = q.GetProperty("question_id").GetInt64(),
                         Explanation = q.GetProperty("explanation").ToString(),
                         Grade = q.GetProperty("grade").GetSingle()
                     }
                 );
             }
-            return dto;
+            return resp;
         }
-
     }
 }

@@ -4,6 +4,6 @@ namespace Backend.Services.Interfaces
 {
     public interface IAGIService
     {
-        Task<AGIResponseDTO> Grade(string prompt);
+        Task<AGIEvaluateResponseDTO> Evaluate(TestEvaluationDTO dto);
     }
 }

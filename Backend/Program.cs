@@ -37,9 +37,12 @@ builder.Services.AddIdentityCore<ApplicationUser>()
 builder.Services.AddAutoMapper(typeof(Program));
 // REPOSITORIES
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<ITestRepository, TestRepository>();
 builder.Services.AddScoped<IUserTestRepository, UserTestRepository>();
+// SERVICES
 builder.Services.AddScoped<IAGIService, AGIService>();
+builder.Services.AddScoped<IGradeService, GradeService>();
 
 // Secrets
 builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);

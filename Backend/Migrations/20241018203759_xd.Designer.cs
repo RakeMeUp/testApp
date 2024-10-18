@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20241016104429_mindfuck")]
-    partial class mindfuck
+    [Migration("20241018203759_xd")]
+    partial class xd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -144,6 +144,10 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("TEXT");
 
@@ -163,7 +167,7 @@ namespace Backend.Migrations
                     b.Property<long>("ResultId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("UserTestResultResultId")
+                    b.Property<long>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("GradeId");
@@ -171,7 +175,9 @@ namespace Backend.Migrations
                     b.HasIndex("QuestionId")
                         .IsUnique();
 
-                    b.HasIndex("UserTestResultResultId");
+                    b.HasIndex("ResultId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("QuestionGrades");
                 });
@@ -414,11 +420,19 @@ namespace Backend.Migrations
 
                     b.HasOne("Backend.Entities.UserTestResult", "UserTestResult")
                         .WithMany("QuestionGrades")
-                        .HasForeignKey("UserTestResultResultId")
+                        .HasForeignKey("ResultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Question");
+
+                    b.Navigation("User");
 
                     b.Navigation("UserTestResult");
                 });

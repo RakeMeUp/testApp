@@ -19,7 +19,7 @@
                 .ForMember(dest => dest.QuestionId, opt => opt.Ignore())
                 .ForMember(dest => dest.TestId, opt => opt.Ignore())
                 .ForMember(dest => dest.Test, opt => opt.Ignore())
-                .ForMember(dest => dest.QuestionGrade, opt => opt.Ignore());
+                .ForMember(dest => dest.QuestionGrades, opt => opt.Ignore());
 
             CreateMap<Test, TestPostDTO>()
                 .ForMember(dest => dest.Questions, opt => opt.MapFrom(src => src.Questions));

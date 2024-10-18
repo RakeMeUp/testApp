@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20241016095258_singlegrades2")]
-    partial class singlegrades2
+    [Migration("20241018202542_hi")]
+    partial class hi
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -144,6 +144,10 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("TEXT");
 
@@ -163,15 +167,12 @@ namespace Backend.Migrations
                     b.Property<long>("ResultId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("UserTestResultResultId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("GradeId");
 
                     b.HasIndex("QuestionId")
                         .IsUnique();
 
-                    b.HasIndex("UserTestResultResultId");
+                    b.HasIndex("ResultId");
 
                     b.ToTable("QuestionGrades");
                 });
@@ -358,13 +359,13 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Joins.UserCreatedTest", b =>
                 {
                     b.HasOne("Backend.Entities.Test", "Test")
-                        .WithMany()
+                        .WithMany("CreatedByUsers")
                         .HasForeignKey("TestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.Entities.ApplicationUser", "User")
-                        .WithMany("UserCreatedTests")
+                        .WithMany("CreatedTests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -377,13 +378,13 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Joins.UserParticipatedTest", b =>
                 {
                     b.HasOne("Backend.Entities.Test", "Test")
-                        .WithMany()
+                        .WithMany("ParticipatingUsers")
                         .HasForeignKey("TestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.Entities.ApplicationUser", "User")
-                        .WithMany("UserParticipatedTests")
+                        .WithMany("ParticipatedTests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -414,7 +415,7 @@ namespace Backend.Migrations
 
                     b.HasOne("Backend.Entities.UserTestResult", "UserTestResult")
                         .WithMany("QuestionGrades")
-                        .HasForeignKey("UserTestResultResultId")
+                        .HasForeignKey("ResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -426,7 +427,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Test", b =>
                 {
                     b.HasOne("Backend.Entities.ApplicationUser", "Owner")
-                        .WithMany("CreatedTests")
+                        .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -508,11 +509,9 @@ namespace Backend.Migrations
                 {
                     b.Navigation("CreatedTests");
 
+                    b.Navigation("ParticipatedTests");
+
                     b.Navigation("TestResults");
-
-                    b.Navigation("UserCreatedTests");
-
-                    b.Navigation("UserParticipatedTests");
                 });
 
             modelBuilder.Entity("Backend.Entities.Question", b =>
@@ -523,6 +522,10 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Entities.Test", b =>
                 {
+                    b.Navigation("CreatedByUsers");
+
+                    b.Navigation("ParticipatingUsers");
+
                     b.Navigation("Questions");
 
                     b.Navigation("TestResults");

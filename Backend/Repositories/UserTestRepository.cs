@@ -18,10 +18,6 @@ namespace Backend.Repositories
         public async void JoinTest(long testId)
         {
             var userId = await _userRepository.GetCurrentUserIdAsync() ?? throw new Exception("User not logged in");
-            var test = await _testRepository.GetMinimalTestAsync(testId) ?? throw new Exception($"Test not found: {testId}");
-            if (test.OwnerId == userId) {
-                throw new Exception($"Owners can't join their own test");
-            }
             var participation = new UserParticipatedTest
             {
                 UserId = userId,

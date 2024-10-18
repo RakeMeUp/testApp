@@ -18,7 +18,7 @@ namespace Backend.Entities
 
         public float MaxGrade { get; set; }
 
-        public QuestionGrade QuestionGrade { get; set; }
+        public ICollection<QuestionGrade> QuestionGrades { get; set; }
     }
 
 

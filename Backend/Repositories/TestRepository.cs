@@ -18,7 +18,6 @@ namespace Backend.Repositories
             _context.Tests.Add(test);
             await _context.SaveChangesAsync();
 
-            // add to join table explicitly
             var userCreatedTest = new UserCreatedTest
             {
                 UserId = test.OwnerId,
@@ -47,7 +46,9 @@ namespace Backend.Repositories
             return await _context.Tests
                 .Where(t=>t.TestId == testId)
                 .Include(t => t.Questions)
+                .ThenInclude(t=>t.QuestionGrades)
                 .Include(t=> t.ParticipatingUsers)
+                .Include(t=> t.TestResults)
                 .FirstOrDefaultAsync() ?? throw new Exception($"Test not found: {testId}");
         }
         public async Task<Test> GetMinimalTestAsync(long testId)

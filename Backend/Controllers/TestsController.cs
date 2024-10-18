@@ -3,81 +3,166 @@
     using AutoMapper;
     using Backend.Entities;
     using Backend.Models;
-    using Backend.Repositories;
     using Backend.Repositories.Interfaces;
+    using Backend.Services.Interfaces;
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
-    using static System.Net.Mime.MediaTypeNames;
 
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class TestsController(IMapper mapper, ITestRepository testRepository, IUserRepository userRepository, IUserTestRepository userTestRepository) : ControllerBase
+    public class TestsController(IMapper mapper,IGradeService gradeService, ITestRepository testRepository, IUserRepository userRepository, IUserTestRepository userTestRepository) : ControllerBase
     {
         [HttpPost]
         public async Task<ActionResult> CreateTest([FromBody] TestPostDTO dto)
         {
-            var owner = await userRepository.GetCurrentUserAsync();
-            if (owner is null)
+            try
             {
-                return Unauthorized();
+                var user = await userRepository.GetCurrentUserAsync();
+                var testEntity = mapper.Map<Test>(dto);
+                testEntity.Owner = user;
+                await testRepository.CreateTestAsync(testEntity);
+                return NoContent();
             }
-
-            var testEntity = mapper.Map<Test>(dto);
-            testEntity.Owner = owner;
-            await testRepository.CreateTestAsync(testEntity);
-            return NoContent();
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TestGetDTO>> GetTest([FromRoute] long id)
+        [HttpGet("{testId}")]
+        public async Task<ActionResult<TestGetDTO>> GetTest([FromRoute] long testId)
         {
-            var test = await testRepository.GetTestAsync(id);
+            try
+            {
+                var test = await testRepository.GetTestAsync(testId);
             return Ok(mapper.Map<TestGetDTO>(test));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpPost("{testId}/answer")]
+        public async Task<ActionResult<TestGetDTO>> AnswerTest([FromRoute] long testId, [FromBody] TestAnswerDTO dto)
+        {
+            try
+            {
+                var userId = await userRepository.GetCurrentUserIdAsync();
+                var test = await testRepository.GetTestAsync(testId);
+                if (test.OwnerId == userId)
+                {
+                    return BadRequest("Owner cant answer their own test");
+                }
+                if (!test.ParticipatingUsers.Any(u => u.UserId == userId))
+                {
+                    return BadRequest("User is not joined to the test");
+
+                }
+                await gradeService.ProposeTestAsync(testId, dto);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("owner/{userId}")]
         public async Task<ActionResult<TestGetDTO>> GetTestsByOwnerAsync([FromRoute] long userId)
         {
-            var tests = await testRepository.GetTestsByOwnerAsync(userId);
-            return Ok(mapper.Map<IEnumerable<TestGetDTO>>(tests));
+            try
+            {
+                var tests = await testRepository.GetTestsByOwnerAsync(userId);
+                return Ok(mapper.Map<IEnumerable<TestGetDTO>>(tests));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("participation/{userId}")]
         public async Task<ActionResult<TestGetDTO>> GetTestsByParticipationAsync([FromRoute] long userId)
         {
-            var tests = await testRepository.GetTestsByParticipationAsync(userId);
-            return Ok(mapper.Map<IEnumerable<TestGetDTO>>(tests));
+            try
+            {
+                var tests = await testRepository.GetTestsByParticipationAsync(userId);
+                return Ok(mapper.Map<IEnumerable<TestGetDTO>>(tests));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("tests/{testId}/join")]
-        public ActionResult JoinTest([FromRoute]long testId)
+        public async Task<ActionResult> JoinTest([FromRoute]long testId)
         {
-            userTestRepository.JoinTest(testId);
-            return NoContent();
+            try
+            {
+                var userId = await userRepository.GetCurrentUserIdAsync();
+                var test = await testRepository.GetTestAsync(testId);
+                if (test.ParticipatingUsers.Any(u => u.UserId == userId))
+                {
+                    return BadRequest("User have already joined to the test");
+                }
+                if (test.OwnerId == userId)
+                {
+                    return BadRequest("Owner can not join their own test");
+                }
+                userTestRepository.JoinTest(testId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
         [HttpPost("tests/{testId}/leave")]
-        public ActionResult LeaveTest([FromRoute] long testId)
+        public async Task<ActionResult> LeaveTest([FromRoute] long testId)
         {
-            userTestRepository.LeaveTest(testId);
-            return NoContent();
+            try
+            {
+                var userId = await userRepository.GetCurrentUserIdAsync();
+                var test = await testRepository.GetTestAsync(testId);
+                if (!test.ParticipatingUsers.Any(u => u.UserId == userId))
+                {
+                    return BadRequest("User has not joined to test yet");
+                }
+                if (test.OwnerId == userId)
+                {
+                    return BadRequest("Owner can not leave their own test");
+                }
+                userTestRepository.LeaveTest(testId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTest([FromRoute]long id)
         {
-            var ownerId = await userRepository.GetCurrentUserIdAsync();
-            if (ownerId is null)
+            try
             {
-                return Unauthorized();
+                var userId = await userRepository.GetCurrentUserIdAsync();
+                var test = await testRepository.GetMinimalTestAsync(id);
+                if (test.OwnerId != userId)
+                {
+                    return Unauthorized();
+                }
+                testRepository.DeleteTest(id);
+                return NoContent();
             }
-            var test = await testRepository.GetMinimalTestAsync(id);
-            if (test.OwnerId != ownerId)
+            catch (Exception ex)
             {
-                return Unauthorized();
+                return BadRequest(ex.Message);
             }
-            testRepository.DeleteTest(id);
-            return NoContent();
-
         }
     }
 
