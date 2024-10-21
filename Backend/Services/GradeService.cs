@@ -4,6 +4,8 @@ using Backend.Models;
 using Backend.Repositories;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Backend.Services
 {
@@ -13,30 +15,66 @@ namespace Backend.Services
         private readonly IUserRepository _userRepository;
         private readonly ITestRepository _testRepository;
         private readonly IQuestionRepository _questionRepository;
+        private readonly IQuestionGradeRepository _questionGradeRepository;
+        private readonly IUserTestResultRepository _userTestResultRepository;
         private readonly IAGIService _agiService;
-
-
-
-        public GradeService(DataContext context, IUserRepository userRepository, ITestRepository testRepository, IQuestionRepository questionRepository, IAGIService AGIService)
+        public GradeService(DataContext context, IUserTestResultRepository userTestResultRepository,IQuestionGradeRepository questionGradeRepository, IUserRepository userRepository, ITestRepository testRepository, IQuestionRepository questionRepository, IAGIService AGIService)
         {
             _context = context;
             _userRepository = userRepository;
             _testRepository = testRepository;
             _questionRepository = questionRepository;
             _agiService = AGIService;
+            _userTestResultRepository = userTestResultRepository;
+            _questionGradeRepository = questionGradeRepository;
 
         }
-
-        public Task ApproveTest()
+        public async Task ApproveTest(long testId, TestApproveDTO dto)
         {
-            throw new NotImplementedException();
-        }
+            var userId = await _userRepository.GetCurrentUserIdAsync() ?? throw new Exception("User not logged in");
+            var result = await _userTestResultRepository.GetResultAsync(testId, dto.UserId);
+            var grades = await _questionGradeRepository.GetGradesByResultId(result.ResultId);
 
+            foreach (var grade in grades)
+            {
+                var edit = dto.GradeEdits.Where(e=>e.QuestionId == grade.QuestionId).FirstOrDefault();
+                if (grade.IsApproved) continue;
+                if (edit != null)
+                {
+                    grade.GradeObtained = edit.CorrectedGrade;
+                    grade.IsApproved = true;
+                    grade.ApprovedAt = DateTime.Now;
+                    if(edit.Explanation != null)
+                    {
+                        grade.Explanation = edit.Explanation;
+                    }
+                }
+                else
+                {
+                    grade.IsApproved = true;
+                    grade.ApprovedAt = DateTime.Now;
+                }
+            }
+            
+            await _context.SaveChangesAsync();
+            await ApproveResult(testId, dto.UserId);
+        }
+        private async Task ApproveResult(long testId, long userId)
+        {
+            var result = await _userTestResultRepository.GetResultAsync(testId, userId);
+            if (result.QuestionGrades.All(qg => qg.IsApproved))
+            {
+                result.IsFinal = true;
+                result.TotalScore = result.QuestionGrades.Sum(g => g.GradeObtained);
+                await _context.SaveChangesAsync();
+            }
+
+        }
         public async Task ProposeTestAsync(long testId,TestAnswerDTO dto)
         {
             var test = await _testRepository.GetMinimalTestAsync(testId) ?? throw new Exception($"Test not found: {testId}");
             var userId = await _userRepository.GetCurrentUserIdAsync() ?? throw new Exception("User not logged in");
-            var evalDTO = await CreateEvaluationFromAnswersAsync(testId, dto);
+            var evalDTO = await CreateEvaluationDTOFromAnswersAsync(testId, dto);
             var agiResp = await _agiService.Evaluate(evalDTO);
 
             UserTestResult result = new()
@@ -44,7 +82,6 @@ namespace Backend.Services
                 UserId = userId,
                 TestId = testId,
                 IsFinal = false, // PROPOSAL
-                TotalScore = agiResp.Questions.Sum(q => q.Grade),
             };
             _context.UserTestResults.Add(result);
             _context.SaveChanges(); // add and save to autogenerate id
@@ -69,14 +106,14 @@ namespace Backend.Services
                 _context.QuestionGrades.Add(grade);
                 await _context.SaveChangesAsync();
             }
+            result.TotalScore = result.QuestionGrades.Sum(g=>g.GradeObtained);
+            _context.SaveChanges();
         }
-
         public Task UpdateProposal()
         {
             throw new NotImplementedException();
         }
-
-        private async Task<TestEvaluationDTO> CreateEvaluationFromAnswersAsync(long testId, TestAnswerDTO dto)
+        private async Task<TestEvaluationDTO> CreateEvaluationDTOFromAnswersAsync(long testId, TestAnswerDTO dto)
         {
             var t = await _testRepository.GetMinimalTestAsync(testId);
             var testEvaluationDTO = new TestEvaluationDTO

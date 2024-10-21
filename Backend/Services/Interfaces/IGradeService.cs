@@ -6,6 +6,6 @@ namespace Backend.Services.Interfaces
     {
         Task ProposeTestAsync(long id, TestAnswerDTO dto);
         Task UpdateProposal();
-        Task ApproveTest();
+        Task ApproveTest(long testId, TestApproveDTO dto);
     }
 }

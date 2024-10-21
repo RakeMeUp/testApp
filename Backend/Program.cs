@@ -38,8 +38,10 @@ builder.Services.AddAutoMapper(typeof(Program));
 // REPOSITORIES
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<IQuestionGradeRepository, QuestionGradeRepository>();
 builder.Services.AddScoped<ITestRepository, TestRepository>();
 builder.Services.AddScoped<IUserTestRepository, UserTestRepository>();
+builder.Services.AddScoped<IUserTestResultRepository, UserTestResultRepository>();
 // SERVICES
 builder.Services.AddScoped<IAGIService, AGIService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
