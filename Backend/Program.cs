@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Backend.Services.Interfaces;
 using Backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,22 +22,65 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader());
 });
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// configure jwt access in swagger
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "just put the token here no bearer needed"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 
 builder.Services.AddDbContext<DataContext>
     (DbContextOptions => DbContextOptions.UseSqlite(
         builder.Configuration["ConnectionStrings:testAppDBConnectionString"]));
 builder.Services.AddAuthorization();
-builder.Services.AddAuthentication().AddCookie(IdentityConstants.ApplicationScheme);
 
+builder.Services.AddAuthentication(option =>
+{
+    option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
+    };
+});
 builder.Services.AddIdentityCore<ApplicationUser>()
     .AddEntityFrameworkStores<DataContext>()
-    .AddApiEndpoints();
+    .AddApiEndpoints()
+    .AddDefaultTokenProviders();
+
 builder.Services.AddAutoMapper(typeof(Program));
 // REPOSITORIES
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -45,6 +92,8 @@ builder.Services.AddScoped<IUserTestResultRepository, UserTestResultRepository>(
 // SERVICES
 builder.Services.AddScoped<IAGIService, AGIService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
+builder.Services.AddScoped<TokenService>();
+
 
 // Secrets
 builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
@@ -64,8 +113,10 @@ if (app.Environment.IsDevelopment())
 
 }
 
-app.UseHttpsRedirection();
 
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapIdentityApi<ApplicationUser>();
 app.MapControllers();
 

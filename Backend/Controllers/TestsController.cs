@@ -22,6 +22,8 @@
             try
             {
                 var test = await testRepository.GetTestAsync(testId);
+                var u = await userRepository.GetCurrentUserAsync();
+                Console.WriteLine(u.UserName);
                 return Ok(mapper.Map<TestGetDTO>(test));
             }
             catch (Exception ex)
