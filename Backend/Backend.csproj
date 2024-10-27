@@ -24,4 +24,9 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TestApp.Client\TestApp.Client.csproj" />
+    <ProjectReference Include="..\TestApp.Shared\TestApp.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -15,11 +15,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowMe",
-        builder => builder
-            .WithOrigins("http://localhost:5299")
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    options.AddPolicy("AllowMe", policy =>
+    {
+        policy.WithOrigins("https://localhost:7225")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
 builder.Services.AddControllers();
@@ -57,8 +59,8 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<DataContext>
     (DbContextOptions => DbContextOptions.UseSqlite(
         builder.Configuration["ConnectionStrings:testAppDBConnectionString"]));
+// AUTH
 builder.Services.AddAuthorization();
-
 builder.Services.AddAuthentication(option =>
 {
     option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -93,9 +95,7 @@ builder.Services.AddScoped<IUserTestResultRepository, UserTestResultRepository>(
 builder.Services.AddScoped<IAGIService, AGIService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<TokenService>();
-
-
-// Secrets
+// SECRETS
 builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
 
 

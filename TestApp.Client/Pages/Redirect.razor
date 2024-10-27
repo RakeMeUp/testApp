@@ -1,0 +1,11 @@
+﻿@page "/redirect"
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/");
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "User must be signed in to access this page", Duration = 3000 });
+    }
+}

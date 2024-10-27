@@ -71,9 +71,7 @@ namespace Backend.Repositories
             return await _context.UserParticipatedTests
                 .Where(up => up.UserId == userId)
                 .Include(up => up.Test)
-                    .ThenInclude(t => t.Questions)
-                .Include(up => up.Test) // ???
-                    .ThenInclude(t => t.ParticipatingUsers)
+                    .ThenInclude(t=>t.TestResults.Where(tr=>tr.UserId == userId))
                 .Select(up => up.Test)
                 .ToListAsync();
         }

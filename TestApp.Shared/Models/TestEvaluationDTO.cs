@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Backend.Models
+namespace Shared.Models
 {
     public class TestEvaluationDTO
     {
@@ -9,6 +9,8 @@ namespace Backend.Models
         [Required]
         [MaxLength(255)]
         public string TestDescription { get; set; }
+        [MaxLength(255)]
+        public string TestStrictness { get; set; }
         [Required]
         public ICollection<QuestionsAndAnswer> QuestionsAndAnswers { get; set; }
     }

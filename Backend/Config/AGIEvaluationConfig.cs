@@ -1,13 +1,20 @@
-﻿using Backend.Models;
-using Microsoft.JSInterop.Infrastructure;
-using OpenAI.Chat;
+﻿using OpenAI.Chat;
 using System.Text;
+using Backend.Models;
+using Shared.Models;
 
 namespace Backend.Config
 {
     public static class AGIEvaluationConfig
     {
-        public static readonly string PrePrompt = "A student took a quiz with the given topic, here are the questions and the answers the student gave for them. Please evaluate each question and grade them with the proper explanation for each. Grading must be between 0 and 1 for each question with the increments of 0.25";
+        public static readonly string PrePrompt = """
+        A student took a quiz with the given topic, 
+        here are the questions and the answers the student
+        gave for them. Please evaluate each question and grade 
+        them with the proper explanation for each. 
+        Grading must be between(inclusive) 0 and the given Max Grade for each question with the increments of 0.25.
+        Please be as strict as the test asks you to be in TestStrictness.
+        """;
         public static ChatResponseFormat CreateResponseFormat()
         {
             byte[] schema = """
@@ -22,9 +29,10 @@ namespace Backend.Config
                             "properties": {
                                 "question_id": {"type": "number"},
                                 "explanation": { "type": "string" },
-                                "grade": { "type": "number"}
+                                "grade": { "type": "number"},
+                                "max_grade": { "type": "number"}
                             },
-                            "required": ["question_id","explanation", "grade"],
+                            "required": ["question_id","explanation", "grade","max_grade"],
                             "additionalProperties": false
                         }
                     }
@@ -46,12 +54,15 @@ namespace Backend.Config
             StringBuilder sb = new();
             sb  .Append($"{PrePrompt}:\n")
                 .Append($"TestId:{dto.TestId}\n")
-                .Append($"TestDescription:{dto.TestDescription}\n");
-                
+                .Append($"TestDescription:{dto.TestDescription}\n")
+                .Append($"TestStrictness:{dto.TestStrictness}\n");
+
             foreach (var q in dto.QuestionsAndAnswers)
             {
-                sb  .Append($"Question(id:{q.QuestionId}): {q.QuestionText}\n")
-                    .Append($"Answer(id:{q.QuestionId}): {q.AnswerText}\n");
+                sb.Append($"Question(id:{q.QuestionId}): {q.QuestionText}\n")
+                    .Append($"Answer(id:{q.QuestionId}): {q.AnswerText}\n")
+                    .Append($"Question Max Grade: {q.MaxGrade}\n");
+
             }
             return sb.ToString();
         }

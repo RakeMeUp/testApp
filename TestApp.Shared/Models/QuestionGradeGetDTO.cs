@@ -1,5 +1,5 @@
 ﻿
-namespace Backend.Models
+namespace Shared.Models
 {
     public class QuestionGradeGetDTO
     {

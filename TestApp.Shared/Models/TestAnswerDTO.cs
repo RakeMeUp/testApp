@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Backend.Models
+namespace Shared.Models
 {
     public class TestAnswerDTO
     {
@@ -12,7 +12,7 @@ namespace Backend.Models
     {
         [Required]
         public long QuestionId { get; set; }
-        [Required]
+        [Required(AllowEmptyStrings =false)]
         public string AnswerText { get; set; }
     }
 }

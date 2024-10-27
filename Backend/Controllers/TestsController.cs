@@ -7,6 +7,7 @@
     using Backend.Services.Interfaces;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
+    using Shared.Models;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;

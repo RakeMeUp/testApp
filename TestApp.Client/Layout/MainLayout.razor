@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@inject Radzen.NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+        <RadzenComponents />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenButton Text="Logout" Click="Logout" Style="margin-top:10px" />
+                </Authorized>
+                <NotAuthorized>
+                    <RadzenButton Text="Login or Register" Click="Login" Style="margin-top:10px" />
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+@code {
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Logged Out", Detail = "User have been logged out.", Duration = 3000 });
+        NavigationManager.NavigateTo("/");
+    }
+    private async Task Login()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+    private bool isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+    }
+}

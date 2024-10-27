@@ -1,0 +1,64 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using Shared.Models
+@using TestApp.Client.Services
+@using TestApp.Client.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px;">
+
+    <RadzenTemplateForm Data=@("LoginWithRegister")>
+        <RadzenLogin AllowResetPassword="false"
+                     Login=@(args => OnLogin(args))
+                     Register=@(args => OnRegister())
+                     Username=@userName Password=@password />
+    </RadzenTemplateForm>
+
+</RadzenCard>
+@code {
+    private bool isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private string userName = "";
+    private string password = "";
+    private string err = "";
+    private async Task OnLogin(LoginArgs args)
+    {
+        try
+        {
+            await AuthService.Login(
+                new LoginDTO
+                {
+                    UserName = args.Username,
+                    Password = args.Password
+                }
+            );
+            //var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            //isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+            Nav.NavigateTo("/");
+        }
+        catch (HttpRequestException e)
+        {
+            err = $"Login fail: {e}";
+        }
+    }
+
+    private void OnRegister()
+    {
+        Nav.NavigateTo("/register");
+    }
+}

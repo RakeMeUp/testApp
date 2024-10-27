@@ -2,6 +2,7 @@
 using Backend.Models;
 using Backend.Services.Interfaces;
 using OpenAI.Chat;
+using Shared.Models;
 using System.Text.Json;
 
 namespace Backend.Services
@@ -46,8 +47,9 @@ namespace Backend.Services
                     {
                         QuestionId = q.GetProperty("question_id").GetInt64(),
                         Explanation = q.GetProperty("explanation").ToString(),
-                        Grade = q.GetProperty("grade").GetSingle()
-                    }
+                        Grade = q.GetProperty("grade").GetSingle(),
+                        MaxGrade = q.GetProperty("max_grade").GetSingle()
+                }
                 );
             }
             return resp;

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Backend.Models
+namespace Shared.Models
 {
     public class TestApproveDTO
     {
@@ -13,6 +13,7 @@ namespace Backend.Models
         [Required]
         public long QuestionId { get; set; }
         [Required]
+        [Range(0, int.MaxValue)]
         public float CorrectedGrade { get; set; }
         public string? Explanation { get; set; }
     }

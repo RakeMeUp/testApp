@@ -19,6 +19,7 @@ namespace Backend.Entities
         public Test Test { get; set; }
 
         public float TotalScore { get; set; }
+        public float MaxScore { get; set; }
 
         public bool IsFinal { get; set; }
 

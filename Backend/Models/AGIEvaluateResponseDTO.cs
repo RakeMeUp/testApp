@@ -11,5 +11,6 @@ namespace Backend.Models
         public long QuestionId { get; set; }
         public string Explanation { get; set; }
         public float Grade { get; set; }
+        public float MaxGrade { get; set; }
     }
 }

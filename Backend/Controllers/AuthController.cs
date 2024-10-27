@@ -1,5 +1,5 @@
 ﻿using Backend.Entities;
-using Backend.Models;
+using Shared.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,40 +10,54 @@ namespace Backend.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(UserManager<ApplicationUser> userManager, TokenService tokenService) : ControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly TokenService _tokenService;
-
-        public AuthController(UserManager<ApplicationUser> userManager, TokenService tokenService)
-        {
-            _userManager = userManager;
-            _tokenService = tokenService;
-        }
-
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
-            var user = new ApplicationUser { UserName = dto.UserName, Email = dto.Email };
-            var result = await _userManager.CreateAsync(user, dto.Password);
 
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+            try
+            {
+                var user = new ApplicationUser 
+                { 
+                    UserName = dto.UserName, 
+                    Email = dto.Email 
+                };
+                var result = await userManager.CreateAsync(user, dto.Password);
 
-            return Ok(new { message = "User registered successfully" });
+                if (!result.Succeeded)throw new Exception(result.Errors.ToString());
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
-            var user = await _userManager.FindByNameAsync(dto.UserName);
-            if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
+            try
             {
-                var token = _tokenService.GenerateToken(user);
-                return Ok(new { token });
+                var user = await userManager.FindByNameAsync(dto.UserName) ?? throw new Exception($"user {dto.UserName} not found");
+                if (await userManager.CheckPasswordAsync(user, dto.Password))
+                {
+                    var token = tokenService.GenerateToken(user);
+                    return Ok(
+                        new TokenResponse() 
+                        { 
+                            Token = token 
+                        }
+                    );
+                }
+                return Unauthorized();
             }
-
-            return Unauthorized();
+            catch (Exception ex) 
+            { 
+                return BadRequest(ex.Message);
+            }
         }
     }
 

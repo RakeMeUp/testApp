@@ -3,6 +3,7 @@
     using AutoMapper;
     using Backend.Models;
     using Backend.Entities;
+    using Shared.Models;
 
     public class TestProfiles : Profile
     {
