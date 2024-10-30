@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Backend.Entities;
 using Backend.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models;
 
 namespace Backend.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController(UserManager<ApplicationUser> userManager, ITestRepository testRepository) : ControllerBase
@@ -14,7 +16,6 @@ namespace Backend.Controllers
         [HttpGet("{userId}")]
         public async Task<ActionResult<UserGetDTO>> GetUser([FromRoute] long userId)
         {
-
             try
             {
                 var user = await userManager.FindByIdAsync(userId.ToString()) ?? throw new Exception($"user: {userId} not found");
@@ -35,7 +36,6 @@ namespace Backend.Controllers
         [HttpGet("test/{testId}")]
         public async Task<ActionResult<IEnumerable<UserGetDTO>>> GetParticipants([FromRoute] long testId)
         {
-
             try
             {
                 var test = await testRepository.GetTestAsync(testId);

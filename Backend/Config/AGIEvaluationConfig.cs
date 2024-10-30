@@ -49,7 +49,7 @@ namespace Backend.Config
             );
         }
 
-        public static string DTOToPrompt(TestEvaluationDTO dto)
+        public static string EvalDTOToPrompt(TestEvaluationDTO dto)
         {
             StringBuilder sb = new();
             sb  .Append($"{PrePrompt}:\n")
