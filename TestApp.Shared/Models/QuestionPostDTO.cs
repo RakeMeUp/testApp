@@ -7,7 +7,7 @@ namespace Shared.Models
         [Required]
         public string QuestionText { get; set; }
         [Required]
-        [Range(0, int.MaxValue)]
+        [Range(1, int.MaxValue)]
         public float MaxGrade { get; set; }
     }
 }
