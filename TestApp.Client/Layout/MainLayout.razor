@@ -38,11 +38,4 @@
     {
         NavigationManager.NavigateTo("/login");
     }
-    private bool isAuthenticated;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
-    }
 }

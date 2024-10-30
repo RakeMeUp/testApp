@@ -1,0 +1,48 @@
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Style="padding-left: 20px; padding-right: 20px" Wrap="Radzen.FlexWrap.Wrap" AlignItems="Radzen.AlignItems.Normal" JustifyContent="Radzen.JustifyContent.Center">
+        <RadzenStack class="flex-grow-1">
+            <RadzenText Text="@questionText" TextAlign="Radzen.TextAlign.Center" Style="text-align: left; font-weight: bold" TextStyle="Radzen.Blazor.TextStyle.H6" />
+            <RadzenText Text="User's answer:" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" Style="font-weight: bold" />
+            <RadzenText Text="@answerText" TextStyle="Radzen.Blazor.TextStyle.Subtitle2" TextAlign="Radzen.TextAlign.Center" Style="text-align: justify; color: var(--rz-secondary-dark)" />
+            <RadzenText Text="Explanation for grading:" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" Style="font-weight: bold" />
+            <RadzenTextArea Placeholder="@explanation" Style="font-size: 12px" Rows="4"/>
+        </RadzenStack>
+        <RadzenStack>
+            <RadzenText Text="Max Score:" TextStyle="Radzen.Blazor.TextStyle.H6" TextAlign="Radzen.TextAlign.Center"/>
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Style="min-width: 110px" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.Center">
+                <RadzenNumeric @bind-Value=@(gradeDto.CorrectedGrade) Placeholder="@gradeSuggestion.ToString()" Step="0.25" Min="0" Max="@(Convert.ToDecimal(maxGrade))" Style="max-width: 100px; text-align: center" />
+                <RadzenText Text="Suggested grade:" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center"/>
+                <RadzenText TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center">
+                    <strong style="color: var(--rz-info)">@gradeSuggestion</strong> / @maxGrade
+                </RadzenText>
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public QuestionGetDTO questionDto { get; set; } = new();
+    [Parameter]
+    public long userId { get; set; }
+    [Parameter]
+    public TestApproveGradeDTO gradeDto { get; set; } = new();
+
+    private float gradeSuggestion { get; set; }
+    private float maxGrade { get; set; }
+    private bool IsApproved { get; set; }
+    private string answerText { get; set; }
+    private string explanation { get; set; }
+    private string questionText { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var qg = questionDto.QuestionGrades.Where(qg => qg.UserId == userId).FirstOrDefault();
+        gradeSuggestion = qg.GradeObtained;
+        maxGrade = questionDto.MaxGrade;
+        IsApproved = qg.IsApproved;
+        answerText =qg.Answer;
+        explanation =qg.Explanation;
+        questionText =questionDto.QuestionText;
+    }
+}

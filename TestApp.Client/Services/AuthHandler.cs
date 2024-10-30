@@ -7,7 +7,7 @@ namespace TestApp.Client.Services
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var jwt = await localStorage.GetItemAsStringAsync("jwt", cancellationToken);
+            var jwt = await localStorage.GetItemAsync<string>("jwt", cancellationToken);
             if (!string.IsNullOrEmpty(jwt))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);

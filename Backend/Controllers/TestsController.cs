@@ -90,6 +90,10 @@
                     throw new InvalidOperationException("User is not joined to the test");
 
                 }
+                if (test.TestResults.Where(tr=>tr.UserId == userId).Any())
+                {
+                    throw new InvalidOperationException("User can't answer twice, please delete existing results and answers to retry");
+                }
                 await gradeService.ProposeTestAsync(testId, dto);
                 return NoContent();
             }

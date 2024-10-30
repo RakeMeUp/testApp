@@ -15,6 +15,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<AuthHandler>();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
 builder.Services.AddAuthorizationCore();

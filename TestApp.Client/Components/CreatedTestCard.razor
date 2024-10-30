@@ -1,0 +1,53 @@
+﻿@inject NavigationManager Nav
+
+
+<RadzenCard Style="display: flex; align-items: center; justify-content: space-between; padding: 10px; padding-left: 30px; padding-right: 30px; flex-wrap: wrap;">
+    <RadzenText Style="text-align: center; flex: 1 1 100%; margin-bottom: 10px; font-size: 18px">
+        <strong>@dto.TestTitle</strong>
+    </RadzenText>
+    @if (@dto.TestResults.Count == 0)
+    {
+        <RadzenBadge Text="No Answers Yet"
+                     BadgeStyle=BadgeStyle.Danger
+        Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    }
+    else
+    {
+        <RadzenBadge Text="@(isFullyFinalized ? "All Results Finalized" : "AGI Evaluated")"
+                     BadgeStyle="@(isFullyFinalized ? BadgeStyle.Success : BadgeStyle.Warning)"
+                     Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    }
+    
+    <RadzenText Style="text-align: center; flex: 1 1 auto;">
+        @if (@dto.ParticipatedUserIDs.Count > 0)
+        {
+            <span>
+                Participants: @dto.ParticipatedUserIDs.Count
+            </span>
+        }
+        else
+        {
+            <span>
+                No Participants Yet
+            </span>
+        }
+    </RadzenText>
+    <RadzenButton Text="Open" Click="HandleClick" Style="flex: 1 1 auto; max-width: 120px" />
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public TestGetDTO dto { get; set; } = new();
+    [Parameter]
+    public long userId { get; set; }
+    private bool isFullyFinalized { get; set; }
+
+    protected override void OnInitialized()
+    {
+        isFullyFinalized = dto.TestResults.All(t => t.IsFinal == true);
+    }
+    private void HandleClick()
+    {
+        Nav.NavigateTo($"/test/owner/{dto.TestId}");
+    }
+}

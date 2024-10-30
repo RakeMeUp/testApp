@@ -1,0 +1,45 @@
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.SpaceAround" Style="flex-grow: 1; padding-left: 10px; padding-right: 10px" Wrap="Radzen.FlexWrap.Wrap" Gap="" Reverse="false">
+            <RadzenText Text="User User" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center" />
+            <RadzenText TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center" >
+                Grade: @totalScore/@maxScore
+            </RadzenText>
+        </RadzenStack>
+        <RadzenStack>
+            <RadzenBadge BadgeStyle="@(isFinal ? BadgeStyle.Info : BadgeStyle.Warning)">
+                @(isFinal ? "Final" : "AGI Evaluated")
+            </RadzenBadge>
+            @if (showEdit)
+            {
+                <RadzenButton Click="HandleEditClick">
+                    <RadzenIcon Icon="edit_square" />
+                </RadzenButton>
+            }
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+@code {
+    [Parameter]
+    public UserTestResultGetDTO dto { get; set; } = new();
+    [Parameter]
+    public EventCallback<long> HandleEdit { get; set; }
+    [Parameter]
+    public bool showEdit { get; set; }
+    private long userId { get; set; }
+    private float totalScore { get; set; }
+    private float maxScore { get; set; }
+    private bool isFinal { get; set; }
+
+    protected override void OnInitialized()
+    {
+        totalScore = dto.TotalScore;
+        maxScore = dto.MaxScore;
+        isFinal = dto.IsFinal;
+        userId = dto.UserId;
+    }
+    private async Task HandleEditClick()
+    {
+        await HandleEdit.InvokeAsync(userId);
+    }
+}

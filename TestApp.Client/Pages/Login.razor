@@ -7,6 +7,7 @@
 
 @inject IAuthService AuthService
 @inject NavigationManager Nav
+@inject NotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px;">
@@ -19,6 +20,7 @@
     </RadzenTemplateForm>
 
 </RadzenCard>
+
 @code {
     private bool isAuthenticated;
 
@@ -47,13 +49,13 @@
                     Password = args.Password
                 }
             );
-            //var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            //isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
             Nav.NavigateTo("/");
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Login successful!", Duration = 3000 });
         }
         catch (HttpRequestException e)
         {
             err = $"Login fail: {e}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Login Error!", Duration = 3000 });
         }
     }
 

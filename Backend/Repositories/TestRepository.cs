@@ -63,6 +63,9 @@ namespace Backend.Repositories
             return await _context.Tests
                 .Where(t => t.OwnerId == ownerId)
                 .Include(t => t.Questions)
+                .ThenInclude(t => t.QuestionGrades)
+                .Include(t => t.ParticipatingUsers)
+                .Include(t => t.TestResults)
                 .ToListAsync();
         }
 

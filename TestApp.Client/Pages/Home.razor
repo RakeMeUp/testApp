@@ -1,7 +1,53 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using TestApp.Client.Components
+@attribute [Authorize]
+@inject ITestService testService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<RadzenStack Orientation="Radzen.Orientation.Horizontal">
+    <RadzenStack Style="flex: 1 1 auto; margin-bottom: 50px">
+        <RadzenText Text="Created Tests" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" />
+        @if (ownedTest.Count() > 0)
+        {
+            @foreach (var test in ownedTest)
+            {
+                <CreatedTestCard dto=test />
+            }
 
-Welcome to your new app.
+        }
+        else
+        {
+            <span>No tests</span>
+        }
+    </RadzenStack>
+    <RadzenStack Style="flex: 1 1 auto; margin-bottom: 50px">
+        <RadzenText Text="Joined Tests" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" />
+        @if (joinedTest.Count() > 0)
+        {
+            @foreach (var test in joinedTest)
+            {
+                <JoinedTestCard dto=test userId=userId  />
+            }
+        }
+        else
+        {
+            <span>No tests</span>
+        }
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private IEnumerable<TestGetDTO> ownedTest { get; set; }= new List<TestGetDTO>();
+    private IEnumerable<TestGetDTO> joinedTest { get; set; } = new List<TestGetDTO>();
+    private long userId { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var provider = (AuthStateProvider)AuthStateProvider;
+        userId = await provider.GetCurrentUserId();
+        ownedTest = await testService.GetByOwnerAsync(userId);
+        joinedTest = await testService.GetByParticipationAsync(userId);
+    }
+}

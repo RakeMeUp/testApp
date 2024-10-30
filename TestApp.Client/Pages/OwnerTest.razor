@@ -1,0 +1,105 @@
+@page "/test/owner/{id:long}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using TestApp.Client.Components
+@inject ITestService testService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject IJSRuntime ijs
+
+<RadzenCard Style="padding-left: 50px; padding-right: 50px; padding: 50px; display: flex" class="flex-column">
+    <RadzenText Text="@(isUserSelected ?  "Approving " + dto.TestTitle : dto.TestTitle)" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 20px" />
+    <EditForm class="d-flex flex-column align-items-center;" Model="@approveDto" OnValidSubmit="HandleSubmit">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal">
+            <RadzenStack Style="margin-bottom: 50px; flex: 1; flex-basis: 80%; padding-left: 20px; padding-right: 20px">
+                <RadzenText Text="Questions" TextStyle="Radzen.Blazor.TextStyle.H4" Style="text-align: justify; margin-bottom: 20px" />
+                @if (isUserSelected)
+                {
+                    @foreach (var g in approveDto.GradeEdits)
+                    {
+                        <QuestionGradeCard questionDto="dto.Questions.Where(q => q.QuestionId == g.QuestionId).FirstOrDefault()" userId="selectedUserId" gradeDto="g"/>
+                    }
+                }
+                else
+                {
+                    @foreach (var q in dto.Questions)
+                    {
+                        <QuestionOwnerCard dto="q" />
+                    }
+                }
+            </RadzenStack>
+            <RadzenStack Style="margin-bottom: 50px;flex: 1; flex-basis: 20%;">
+                <RadzenText Text="@(isUserSelected ? "Approval for:":"Participants:" )" TextStyle="Radzen.Blazor.TextStyle.H4" Style="text-align: right; margin-bottom: 20px" />
+                @if (isUserSelected)
+                {
+                    <UserCard dto="dto.TestResults.Where(tr=>tr.UserId == selectedUserId).FirstOrDefault()" HandleEdit="HandleUserSelection" />
+                }
+                else
+                {
+                    @foreach (var t in dto.TestResults)
+                    {
+                        <UserCard dto="t" HandleEdit="HandleUserSelection" showEdit />
+                    }
+                }
+            </RadzenStack>
+        </RadzenStack>
+        @if (isUserSelected)
+        {
+            <RadzenButton Text="Submit" ButtonType="Radzen.ButtonType.Submit" class="mx-auto" Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
+        }
+    </EditForm>
+</RadzenCard>
+@code {
+    [Parameter]
+    public long id { get; set; }
+    private long userId { get; set; }
+    private long selectedUserId { get; set; } = 0;
+    private bool isUserSelected { get; set; }
+    private TestGetDTO dto { get; set; } = new();
+    private TestApproveDTO approveDto { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var provider = (AuthStateProvider)AuthStateProvider;
+        userId = await provider.GetCurrentUserId();
+        dto = await testService.GetAsync(id);
+        if (dto.OwnerId != userId)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Redirect", Detail = "You are Not the owner of this test, redirected to homepage", Duration = 3000 });
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private void HandleUserSelection(long id)
+    {
+        selectedUserId = id;
+        isUserSelected = true;
+        InitApproveDto(approveDto, id, dto);
+    }
+
+    private void InitApproveDto(TestApproveDTO dto, long userId, TestGetDTO testDto)
+    {
+        dto.UserId = userId;
+        List<TestApproveGradeDTO> testApproveGrades = [];
+        foreach(var q in testDto.Questions)
+        {
+            testApproveGrades.Add
+            (
+                new TestApproveGradeDTO
+                {
+                    QuestionId = q.QuestionId,
+                    CorrectedGrade = -1,
+                    Explanation = ""
+                }
+            );
+        }
+        dto.GradeEdits = testApproveGrades;
+    }
+    private async Task HandleSubmit()
+    {
+        await ijs.InvokeVoidAsync("console.log", approveDto);
+
+    }
+}
