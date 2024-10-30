@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
 {
-
-
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController(UserManager<ApplicationUser> userManager, TokenService tokenService) : ControllerBase
@@ -41,7 +39,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var user = await userManager.FindByNameAsync(dto.UserName) ?? throw new Exception($"user {dto.UserName} not found");
+                var user = await userManager.FindByNameAsync(dto.UserName) ?? throw new Exception($"user: {dto.UserName} not found");
                 if (await userManager.CheckPasswordAsync(user, dto.Password))
                 {
                     var token = tokenService.GenerateToken(user);

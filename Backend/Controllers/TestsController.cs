@@ -23,8 +23,6 @@
             try
             {
                 var test = await testRepository.GetTestAsync(testId);
-                var u = await userRepository.GetCurrentUserAsync();
-                Console.WriteLine(u.UserName);
                 return Ok(mapper.Map<TestGetDTO>(test));
             }
             catch (Exception ex)
@@ -33,7 +31,7 @@
             }
         }
         [HttpGet("owner/{userId}")]
-        public async Task<ActionResult<TestGetDTO>> GetTestsByOwnerAsync([FromRoute] long userId)
+        public async Task<ActionResult<IEnumerable<TestGetDTO>>> GetTestsByOwnerAsync([FromRoute] long userId)
         {
             try
             {
@@ -46,7 +44,7 @@
             }
         }
         [HttpGet("participation/{userId}")]
-        public async Task<ActionResult<TestGetDTO>> GetTestsByParticipationAsync([FromRoute] long userId)
+        public async Task<ActionResult<IEnumerable<TestGetDTO>>> GetTestsByParticipationAsync([FromRoute] long userId)
         {
             try
             {
@@ -103,7 +101,7 @@
             }
         }
         [HttpPost("{testId}/approve")]
-        public async Task<ActionResult<TestGetDTO>> ApproveTest([FromRoute] long testId, [FromBody] TestApproveDTO dto)
+        public async Task<IActionResult> ApproveTest([FromRoute] long testId, [FromBody] TestApproveDTO dto)
         {
             try
             {
@@ -121,8 +119,8 @@
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("tests/{testId}/join")]
-        public async Task<ActionResult> JoinTest([FromRoute]long testId)
+        [HttpPost("{testId}/join")]
+        public async Task<IActionResult> JoinTest([FromRoute]long testId)
         {
             try
             {
@@ -144,8 +142,8 @@
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("tests/{testId}/leave")]
-        public async Task<ActionResult> LeaveTest([FromRoute] long testId)
+        [HttpPost("{testId}/leave")]
+        public async Task<IActionResult> LeaveTest([FromRoute] long testId)
         {
             try
             {
