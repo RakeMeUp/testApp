@@ -1,0 +1,11 @@
+﻿@page "/redirect"
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+
+@code {
+    protected override void OnInitialized()
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Redirect", Detail = "User must be signed in to access this page", Duration = 3000 });
+        Navigation.NavigateTo("/login");
+    }
+}

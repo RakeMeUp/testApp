@@ -13,13 +13,16 @@ namespace Backend.Entities
         [Required]
         [MaxLength(255)]
         public string TestTitle { get; set; }
+        [Required]
+        [MaxLength(255)]
+        public string TestStrictness { get; set; }
 
         [MaxLength(1000)]
         public string TestDescription { get; set; }
 
         [Required]
         public long OwnerId { get; set; }
-        public ApplicationUser Owner { get; set; } // Reference to the User who owns the test
+        public ApplicationUser Owner { get; set; }
         public ICollection<Question> Questions { get; set; }
         public ICollection<UserTestResult> TestResults { get; set; }
         public ICollection<UserCreatedTest> CreatedByUsers { get; set; }

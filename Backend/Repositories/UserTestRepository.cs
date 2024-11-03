@@ -32,6 +32,11 @@ namespace Backend.Repositories
             var userId = await _userRepository.GetCurrentUserIdAsync() ?? throw new Exception("User not logged in");
             var participation = await _dataContext.UserParticipatedTests
                 .FirstOrDefaultAsync(up => up.UserId == userId && up.TestId == testId) ?? throw new Exception($"User is currently not in test: {testId}");
+            var testResult = await _dataContext.UserTestResults.FirstOrDefaultAsync(tr=>tr.UserId == userId && tr.TestId == testId);
+            if (testResult != null)
+            {
+                _dataContext.UserTestResults.Remove(testResult);
+            }
             _dataContext.UserParticipatedTests.Remove(participation);
             await _dataContext.SaveChangesAsync();
         }

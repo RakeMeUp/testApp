@@ -1,11 +1,10 @@
 ﻿using Backend.Contexts;
 using Backend.Entities;
-using Backend.Models;
-using Backend.Repositories;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Shared.Models;
 
 namespace Backend.Services
 {
@@ -66,6 +65,7 @@ namespace Backend.Services
             {
                 result.IsFinal = true;
                 result.TotalScore = result.QuestionGrades.Sum(g => g.GradeObtained);
+                result.MaxScore = result.QuestionGrades.Sum(g => g.MaxGrade);
                 await _context.SaveChangesAsync();
             }
 
@@ -74,7 +74,7 @@ namespace Backend.Services
         {
             var test = await _testRepository.GetMinimalTestAsync(testId) ?? throw new Exception($"Test not found: {testId}");
             var userId = await _userRepository.GetCurrentUserIdAsync() ?? throw new Exception("User not logged in");
-            var evalDTO = await CreateEvaluationDTOFromAnswersAsync(testId, dto);
+            var evalDTO = await CreateEvaluationDTOFromAnswersAsync(testId, dto, test.TestStrictness);
             var agiResp = await _agiService.Evaluate(evalDTO);
 
             UserTestResult result = new()
@@ -102,24 +102,27 @@ namespace Backend.Services
                     IsApproved = false, // PROPOSAL
                     ResultId = result.ResultId,
                     UserId = userId,
+                    MaxGrade = question.MaxGrade,
                 };
                 _context.QuestionGrades.Add(grade);
                 await _context.SaveChangesAsync();
             }
             result.TotalScore = result.QuestionGrades.Sum(g=>g.GradeObtained);
+            result.MaxScore = result.QuestionGrades.Sum(g=>g.MaxGrade);
             _context.SaveChanges();
         }
         public Task UpdateProposal()
         {
             throw new NotImplementedException();
         }
-        private async Task<TestEvaluationDTO> CreateEvaluationDTOFromAnswersAsync(long testId, TestAnswerDTO dto)
+        private async Task<TestEvaluationDTO> CreateEvaluationDTOFromAnswersAsync(long testId, TestAnswerDTO dto, string strictness)
         {
             var t = await _testRepository.GetMinimalTestAsync(testId);
             var testEvaluationDTO = new TestEvaluationDTO
             {
                 TestId = testId,
                 TestDescription = t.TestDescription,
+                TestStrictness = strictness,
                 QuestionsAndAnswers = []
             };
 

@@ -163,6 +163,9 @@ namespace Backend.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("INTEGER");
 
+                    b.Property<float>("MaxGrade")
+                        .HasColumnType("REAL");
+
                     b.HasKey("UserId", "ResultId", "QuestionId");
 
                     b.HasIndex("QuestionId");
@@ -186,6 +189,11 @@ namespace Backend.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TestStrictness")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TestTitle")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -206,6 +214,9 @@ namespace Backend.Migrations
 
                     b.Property<bool>("IsFinal")
                         .HasColumnType("INTEGER");
+
+                    b.Property<float>("MaxScore")
+                        .HasColumnType("REAL");
 
                     b.Property<long>("TestId")
                         .HasColumnType("INTEGER");

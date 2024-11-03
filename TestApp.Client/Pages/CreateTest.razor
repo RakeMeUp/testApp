@@ -1,0 +1,136 @@
+﻿@page "/test/create"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using TestApp.Client.Components
+@inject ITestService testService
+@inject IQuestionService questionService
+@inject DialogService DialogService
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="TestPostDTO" Style="display: flex; margin-bottom: 50px" class="flex-column gap-4">
+    <RadzenCard Style="display: flex; padding-left: 50px; padding-right: 50px; padding-bottom: 50px" class="flex-column">
+        <RadzenText Text="Test Creation" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 30px" />
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Style="margin-bottom: 20px">
+            <RadzenTextBox @bind-Value="dto.TestTitle" class="flex-grow-1" Placeholder="Title"/>
+            <RadzenDropDown @bind-Value="dto.TestStrictness" Data="Strictnesses" Placeholder="Strictness" />
+        </RadzenStack>
+        <RadzenTextArea @bind-Value="dto.TestDescription" Placeholder="Description"/>
+        
+    </RadzenCard>
+    <RadzenCard Style="display: flex; padding-left: 50px; padding-right: 50px; padding-bottom: 50px" class="flex-column gap-3">
+        <RadzenText Text="Questions" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 30px" />
+        @foreach(var q in questions)
+        {
+            <CreateTestQuestionInput dto="q" HandleDelete="DeleteQuestion" />
+        }
+        <RadzenStack Orientation="Radzen.Orientation.Vertical">
+            <RadzenButton Click="HandleAddQuestion" class="rz-w-fit-content" Icon="add" Size="Radzen.ButtonSize.Large" />
+            <RadzenButton Click="HandleOpenAGIQuestions" Text="Create With agi" class="rz-w-fit-content" Icon=@(isAGIOpen? "arrow_warm_up" : "arrow_cool_down") ButtonStyle="Radzen.ButtonStyle.Info" Size="Radzen.ButtonSize.Medium" />
+        </RadzenStack>
+        @if (isAGIOpen)
+        {
+            <RadzenStack Orientation="Radzen.Orientation.Vertical">
+                <RadzenTextBox @bind-Value=AgiQuestionDto.Topic class="flex-grow-1" Placeholder="Topic of Questions (Leave empty to use Test Description)" />
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal">
+                    <RadzenLabel Text="Maximum Total Grade" Component="maximumTotalGradeInput" Style="margin-right: 10px;" />
+                    <RadzenNumeric id="maximumTotalGradeInput" @bind-Value="AgiQuestionDto.MaximumTotalGrade"
+                                   Style="width: 100px" Placeholder="Maximum Total Grade" />
+                    <RadzenLabel Text="Number of Questions" Component="numberOfQuestionsInput" Style="margin-right: 10px; margin-left: 20px;" />
+                    <RadzenNumeric id="numberOfQuestionsInput" @bind-Value="AgiQuestionDto.NumberOfQuestions"
+                                   Style="width: 100px" Placeholder="Number of Questions" />
+                    <RadzenButton Click="HandleCreateAGIQuestion" IsBusy="@isAGIBusy" Disabled="@isAGISubmitDisabled" Text="Create" class="rz-w-fit-content" ButtonStyle="Radzen.ButtonStyle.Primary" Size="Radzen.ButtonSize.Medium" />
+                </RadzenStack>
+            </RadzenStack>
+        }
+        <RadzenButton Click="HandleCreateTest" Text="Submit" ButtonType="Radzen.ButtonType.Submit" class="mx-auto" IsBusy="@isCreationBusy" Disabled="@isCreationSubmitDisabled" Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
+    </RadzenCard>
+</RadzenTemplateForm>
+@code {
+    private TestPostDTO dto { get; set; } = new();
+    private bool isAGIOpen { get; set; } = false;
+    private bool isAGIBusy { get; set; } = false;
+    private bool isCreationBusy { get; set; } = false;
+    private bool isCreationSubmitDisabled { get; set; } = false;
+    private bool isAGISubmitDisabled { get; set; } = false;
+    private AGIQuestionCreationDTO AgiQuestionDto { get; set; } = new();
+    private List<QuestionPostDTO> questions { get; set; } = new()
+    {
+        new QuestionPostDTO()
+    };
+    private List<string> Strictnesses = new()
+    {
+        "Kindergarten",
+        "Middle School",
+        "High School",
+        "University"
+    };
+    private void HandleOpenAGIQuestions()
+    {
+        isAGIOpen = !isAGIOpen;
+    }
+    private void HandleAddQuestion()
+    {
+        questions.Add(new QuestionPostDTO());
+    }
+    private void DeleteQuestion(QuestionPostDTO dto)
+    {
+        questions.Remove(dto);
+    }
+    private async Task HandleCreateAGIQuestion()
+    {
+        if (string.IsNullOrEmpty(dto.TestStrictness))
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Please Choose Strictness for the test to apply it for the AGI questions!", Duration = 3000 });
+            return;
+        }
+        if (string.IsNullOrEmpty(dto.TestDescription) && string.IsNullOrEmpty(AgiQuestionDto.Topic))
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Please give topic or write a Test Description to apply it for the AGI questions!", Duration = 3000 });
+            return;
+        }
+        else
+        {
+            AgiQuestionDto.Strictness = dto.TestStrictness;
+            AgiQuestionDto.Topic = !string.IsNullOrEmpty(AgiQuestionDto.Topic) ? AgiQuestionDto.Topic : dto.TestDescription;
+            isAGIBusy = true;
+            isAGISubmitDisabled = true;
+            var resp = await questionService.CreateQuestions(AgiQuestionDto);
+            foreach (var q in resp.Questions)
+            {
+                questions.Add(new QuestionPostDTO()
+                {
+                    QuestionText = q.QuestionText,
+                    MaxGrade = q.MaxGrade
+                });
+            }
+            isAGIBusy = false;
+            isAGISubmitDisabled = false;
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Questions added from AGI", Duration = 3000 });
+        }
+    }
+
+    private async Task HandleCreateTest()
+    {
+        isCreationBusy = true;
+        isCreationSubmitDisabled = true;
+        var confResult = await DialogService.Confirm("Are you sure you want to create this test?", "Confirm Creation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        isCreationBusy = false;
+        isCreationSubmitDisabled = false;
+        if (confResult.HasValue && confResult.Value == true)
+        {
+            dto.Questions = questions;
+            var res = await testService.CreateTest(dto);
+            if (res.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Test successfully Created!", Duration = 3000 });
+                isCreationBusy = false;
+                Nav.NavigateTo($"/");
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+            }
+        }
+    }
+}

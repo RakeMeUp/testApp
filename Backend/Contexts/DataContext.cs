@@ -64,15 +64,14 @@ namespace Backend.Contexts
             modelBuilder.Entity<QuestionGrade>()
                 .HasKey(qg => new { qg.UserId, qg.ResultId, qg.QuestionId });
 
-            // Configure relationships if needed
             modelBuilder.Entity<QuestionGrade>()
                 .HasOne(qg => qg.UserTestResult)
-                .WithMany(utr => utr.QuestionGrades) // Assuming a collection in UserTestResult
+                .WithMany(utr => utr.QuestionGrades) 
                 .HasForeignKey(qg => qg.ResultId);
 
             modelBuilder.Entity<QuestionGrade>()
                 .HasOne(qg => qg.Question)
-                .WithMany(q => q.QuestionGrades) // Assuming a collection in Question
+                .WithMany(q => q.QuestionGrades)
                 .HasForeignKey(qg => qg.QuestionId);
         }
     }

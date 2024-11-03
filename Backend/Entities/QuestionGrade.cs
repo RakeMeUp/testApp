@@ -10,6 +10,7 @@
         public Question Question { get; set; }
 
         public float GradeObtained { get; set; }
+        public float MaxGrade { get; set; }
         public string Explanation { get; set; }
         public string Answer { get; set; }
         public bool IsApproved { get; set; }

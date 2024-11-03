@@ -1,0 +1,120 @@
+@page "/user"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IUserService userService
+@inject IJSRuntime jsr
+@inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject DialogService DialogService
+@inject NavigationManager Nav
+
+<RadzenCard Style="padding: 50px">
+    <RadzenText Text="Settings for your account" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 50px" />
+    <RadzenTemplateForm @attributes="noAutofill" TItem="UserUpdateDTO">
+        <RadzenStack>
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Component="UserNameInput" style="width: 100%" Text="Change Userame"></RadzenLabel>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="9">
+                    <RadzenTextBox @attributes="noAutofill" @bind-Value="userUpdate.UserName" style="display: block; width: 100%" Placeholder="@("Current: "+ userGet.UserName )" Name="UserNameInput" AutoCompleteType="Radzen.Blazor.AutoCompleteType.Off"></RadzenTextBox>
+                    <RadzenRequiredValidator Component="UserNameInput" style="position: absolute"></RadzenRequiredValidator>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Component="PasswordInput" style="width: 100%" Text="Change Password"></RadzenLabel>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="9">
+                    <RadzenPassword @attributes="noAutofill" @bind-Value="userUpdate.Password" style="display: block; width: 100%" Name="PasswordInput" AutoCompleteType="Radzen.Blazor.AutoCompleteType.Off"></RadzenPassword>
+                    <RadzenRequiredValidator Component="PasswordInput" style="position: absolute"></RadzenRequiredValidator>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Component="EmailInput" style="width: 100%" Text="Change Email"></RadzenLabel>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="9">
+                    <RadzenTextBox @attributes="noAutofill" @bind-Value="userUpdate.Email" style="display: block; width: 100%" Placeholder="@("Current: " + userGet.Email)" Name="EmailInput" AutoCompleteType="Radzen.Blazor.AutoCompleteType.Off"></RadzenTextBox>
+                    <RadzenRequiredValidator Component="EmailInput" style="position: absolute"></RadzenRequiredValidator>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Style="margin-top: 50px">
+                <RadzenLabel @attributes="noAutofill" Component="CurrentPasswordInput" Text="Confirm Current Password"></RadzenLabel>
+                <RadzenPassword @bind-Value="userUpdate.CurrentPassword" Name="CurrentPasswordInput" AutoCompleteType="Radzen.Blazor.AutoCompleteType.Off"></RadzenPassword>
+
+                <RadzenButton Click="HandleDelete" ButtonStyle="Radzen.ButtonStyle.Secondary" Icon="person_remove" Size="Radzen.ButtonSize.Medium" Text="Delete user" />
+                <RadzenButton Click="HandleSubmit" ButtonStyle="ButtonStyle.Primary" IsBusy="@isBusy" Disabled="@isSubmitDisabled" ButtonType="ButtonType.Submit" Text="Submit" Variant="Radzen.Variant.Filled" />
+                <RadzenButton Click="HandleClear" ButtonStyle="ButtonStyle.Warning" ButtonType="ButtonType.Reset" Text="Clear" Variant="Radzen.Variant.Filled" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code{
+    private UserGetDTO userGet { get; set; } = new();
+    private UserUpdateDTO userUpdate { get; set; } = new();
+    private UserDeleteDTO userDelete { get; set; } = new();
+    private bool isBusy { get; set; } = false;
+    private long userId { get; set; }
+    private bool isSubmitDisabled { get; set; } = false;
+    private Dictionary<string, object> noAutofill { get; set; } = new()
+    {
+        { "autocomplete", "off" }
+    };
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = (AuthStateProvider)AuthStateProvider;
+        userId = await authState.GetCurrentUserId();
+        userGet = await userService.GetAsync(userId);
+    }
+    private async Task HandleSubmit()
+    {
+        isBusy = true;
+        isSubmitDisabled = true;
+        var res = await userService.UpdateUser(userId, userUpdate);
+        if (res.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "User has been updated Successfully", Duration = 3000 });
+            var authState = (AuthStateProvider)AuthStateProvider;
+            await authState.MarkUserAsLoggedOut();
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+            isBusy = false;
+            isSubmitDisabled = false;
+        }
+    }
+    private async Task HandleDelete()
+    {
+        isBusy = true;
+        isSubmitDisabled = true;
+        var result = await DialogService.Confirm("Are you sure you want to DELETE your account? This is UNREVERSABLE.", "Confirm Submition", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        isBusy = false;
+        isSubmitDisabled = false;
+        if (result.HasValue && result.Value == true)
+        {
+            userDelete.Password = userUpdate.CurrentPassword;
+            var res = await userService.DeleteUser(userId, userDelete);
+            if (res.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "User has been deleted Successfully", Duration = 3000 });
+                var authState = (AuthStateProvider)AuthStateProvider;
+                await authState.MarkUserAsLoggedOut();
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+                isBusy = false;
+                isSubmitDisabled = false;
+            }
+        }
+    }
+    private void HandleClear()
+    {
+        userUpdate = new();
+    }
+}

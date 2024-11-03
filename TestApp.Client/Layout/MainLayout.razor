@@ -1,0 +1,54 @@
+@inherits LayoutComponentBase
+
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@inject Radzen.NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+<div class="page">
+    <RadzenComponents/>
+    <main>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.Center" Style="padding: 10px; background-color: var(--rz-base-900); color: var(--rz-white); margin-bottom: 30px; z-index: 1000; position: sticky; top: 0px" class="rz-shadow-3">
+            <RadzenButton Click="GoHome" ButtonStyle="Radzen.ButtonStyle.Primary" Icon="home" Size="Radzen.ButtonSize.Large" />
+            <RadzenText Text="@($"Welcome {userName}!")" class="flex-grow-1" TextStyle="Radzen.Blazor.TextStyle.H4" Style="color: var(--rz-white)" />
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenButton Text="Account" Click="OpenSettings" ButtonStyle="Radzen.ButtonStyle.Info" />
+                    <RadzenButton Text="Logout" Click="Logout" ButtonStyle="Radzen.ButtonStyle.Secondary" />
+                </Authorized>
+                <NotAuthorized>
+                    <RadzenButton Text="Login or Register" Click="Login" Style="margin-top:10px" />
+                </NotAuthorized>
+            </AuthorizeView>
+        </RadzenStack>
+        <article class="content" style="margin-left: 50px; margin-right: 50px">
+            @Body
+        </article>
+    </main>
+</div>
+@code {
+    private string userName { get; set; } = "";
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        userName = authState.User.Identity?.Name ?? "";
+
+    }
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Logged Out", Detail = "User have been logged out.", Duration = 3000 });
+        NavigationManager.NavigateTo("/");
+    }
+    private async Task Login()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+    private async Task OpenSettings()
+    {
+        NavigationManager.NavigateTo("/user");
+    }
+    private async Task GoHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

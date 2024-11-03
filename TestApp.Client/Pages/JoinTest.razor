@@ -1,0 +1,63 @@
+@page "/test/join"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using TestApp.Client.Models
+@inject NotificationService NotificationService
+@inject ITestService testService
+@inject NavigationManager Nav
+
+<RadzenText Text="Join Test" TextStyle="Radzen.Blazor.TextStyle.H2" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 50px" />
+<RadzenCard Style="display: flex; padding: 30px" class="flex-column align-items-center rz-w-fit-content mx-auto">
+    <RadzenStack Style="max-width: 500px" AlignItems="Radzen.AlignItems.Center">
+        <RadzenText Text="Join test by entering test ID below:" class="w-100" Style="text-align: justify" TextStyle="Radzen.Blazor.TextStyle.H5" />
+        
+        <EditForm Model="model" OnSubmit="HandleJoin">
+            <DataAnnotationsValidator />
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal">
+                <RadzenNumeric @bind-Value="model.TestId" Placeholder="Test id" ShowUpDown="false" TextAlign="Radzen.TextAlign.Center" Min="0" Max="long.MaxValue" Step="1" />
+                <RadzenButton Text="Join" ButtonType="Radzen.ButtonType.Submit" Icon="add"/>
+            </RadzenStack>
+        </EditForm>
+    </RadzenStack>
+</RadzenCard>
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "testId")]
+    public long? testId { get; set; }
+    private JoinTestModel model { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (testId.HasValue)
+        {
+            // if user came here with link/qr
+            await Join(testId);
+        }
+    }
+
+    private async Task HandleJoin()
+    {
+        if (!model.TestId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "No testId given", Duration = 3000 });
+        }
+        else
+        {
+            await Join(model.TestId);
+        }
+    }
+
+    private async Task Join(long? id)
+    {
+        var res = await testService.JoinTest(id.Value);
+        if (res.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = $"Joined to test: {model.TestId}", Duration = 3000 });
+            Nav.NavigateTo($"/test/{id}");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+        }
+    }
+}

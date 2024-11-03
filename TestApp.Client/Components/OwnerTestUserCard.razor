@@ -1,0 +1,49 @@
+@inject IUserService userService
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.SpaceAround" Style="flex-grow: 1; padding-left: 10px; padding-right: 10px" Wrap="Radzen.FlexWrap.Wrap" Gap="" Reverse="false">
+            <RadzenText TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center">
+                (@userId) <strong>@userName</strong>
+            </RadzenText>
+            <RadzenText TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center" >
+                Grade: @totalScore/<strong>@maxScore</strong>
+            </RadzenText>
+        </RadzenStack>
+        <RadzenStack>
+            <RadzenBadge BadgeStyle="@(isFinal ? BadgeStyle.Info : BadgeStyle.Warning)">
+                @(isFinal ? "Final" : "AGI Evaluated")
+            </RadzenBadge>
+            @if (showEdit && !isFinal)
+            {
+                <RadzenButton Text="Approve" Click="HandleEditClick" Icon="edit_square"/>
+            }
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+@code {
+    [Parameter]
+    public UserTestResultGetDTO dto { get; set; } = new();
+    [Parameter]
+    public EventCallback<long> HandleEdit { get; set; }
+    [Parameter]
+    public bool showEdit { get; set; }
+    private long userId { get; set; }
+    private string userName { get; set; }
+    private float totalScore { get; set; }
+    private float maxScore { get; set; }
+    private bool isFinal { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        totalScore = dto.TotalScore;
+        maxScore = dto.MaxScore;
+        isFinal = dto.IsFinal;
+        userId = dto.UserId;
+        var userDto = await userService.GetAsync(userId);
+        userName = userDto.UserName;
+    }
+    private async Task HandleEditClick()
+    {
+        await HandleEdit.InvokeAsync(userId);
+    }
+}

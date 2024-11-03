@@ -1,0 +1,68 @@
+@page "/register"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Shared.Models
+@using TestApp.Client.Services
+@using TestApp.Client.Services.Interfaces
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<RadzenText Text="Register" TextStyle="Radzen.Blazor.TextStyle.H2" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 50px" />
+
+<RadzenTemplateForm Data="@registerModel" TItem="RegisterDTO" Submit="RegisterUser" InvalidSubmit="HandleInvalidSubmit" Style="display: flex; margin-bottom: 30px" class="justify-content-center align-items-center">
+    <DataAnnotationsValidator/>
+    <RadzenFieldset Style="padding: 20px; visibility: visible">
+        <RadzenFieldset Legend="Create an Account" Style="display: flex; padding: 20px; border: none" class="align-items-center justify-content-center">
+            <RadzenLabel Text="Username" />
+            <RadzenTextBox @bind-Value="registerModel.UserName" Style="width:100%" Name="Username" />
+            <ValidationMessage For="@(() => registerModel.UserName)" />
+
+            <RadzenLabel Text="Email" />
+            <RadzenTextBox @bind-Value="registerModel.Email" Style="width:100%" Name="Email" />
+            <ValidationMessage For="@(() => registerModel.Email)" />
+
+            <RadzenLabel Text="Password" />
+            <RadzenPassword @bind-Value="registerModel.Password" Style="width:100%" Name="Password" />
+            <ValidationMessage For="@(() => registerModel.Password)" />
+
+            <RadzenButton Text="Register" ButtonType="ButtonType.Submit" Style="margin-top: 10px; float: none" />
+        </RadzenFieldset>
+    </RadzenFieldset>
+</RadzenTemplateForm>
+
+@code {
+    private bool isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private RegisterDTO registerModel = new();
+    private async Task RegisterUser()
+    {
+        try
+        {
+            await AuthService.Register(registerModel);
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Registration successful!", Duration = 3000 });
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (HttpRequestException e)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = $"Registration failed. {e}", Duration = 3000 });
+        }
+    }
+
+    private void HandleInvalidSubmit()
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Validation", Detail = "Errors while filling out register form", Duration = 3000 });
+    }
+}

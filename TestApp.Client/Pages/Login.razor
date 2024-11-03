@@ -1,0 +1,70 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using Shared.Models
+@using TestApp.Client.Services
+@using TestApp.Client.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H2" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 50px" />
+<RadzenCard class="rz-w-fit-content mx-auto">
+
+    <RadzenTemplateForm Data=@("LoginWithRegister")>
+        <RadzenLogin AllowResetPassword="false"
+                     Login=@(args => OnLogin(args))
+                     Register=@(args => OnRegister())
+                     Username=@userName Password=@password Style="float: none" AllowRememberMe="false" ShowLoginButton="true" />
+    </RadzenTemplateForm>
+
+</RadzenCard>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string ReturnUrl { get; set; } = "/";
+    private bool isAuthenticated;
+    private string userName = "";
+    private string password = "";
+    private string err = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+    
+    private async Task OnLogin(LoginArgs args)
+    {
+        try
+        {
+            await AuthService.Login(
+                new LoginDTO
+                {
+                    UserName = args.Username,
+                    Password = args.Password
+                }
+            );
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Login successful!", Duration = 3000 });
+            Nav.NavigateTo(ReturnUrl??"/");
+        }
+        catch (Exception e)
+        {
+            err = $"Login fail: {e}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Login Error!", Duration = 3000 });
+        }
+    }
+
+    private void OnRegister()
+    {
+        Nav.NavigateTo("/register");
+    }
+}

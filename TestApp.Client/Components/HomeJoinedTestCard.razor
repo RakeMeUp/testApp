@@ -1,0 +1,52 @@
+﻿@inject NavigationManager Nav
+
+<RadzenCard Style="display: flex; align-items: center; justify-content: space-between; padding: 10px; padding-left: 30px; padding-right: 30px; flex-wrap: wrap;width:100%">
+    <RadzenText Style="text-align: center; flex: 1 1 100%; margin-bottom: 10px; font-size: 18px">
+        <strong>@dto.TestTitle</strong>
+    </RadzenText>
+    @if (grade != null)
+    {
+        <RadzenBadge Text="@(isFinal ? "Final" : "AGI Evaluated")"
+                     BadgeStyle="@(isFinal ? BadgeStyle.Info : BadgeStyle.Warning)"
+        Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    }
+    else
+    {
+        <RadzenBadge Text="Not filled yet"
+                     BadgeStyle="BadgeStyle.Danger"
+                     Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    }
+    <RadzenText Style="text-align: center; flex: 1 1 auto;">
+        @if (grade is null){
+            <span>No Grading Yet</span>
+        }
+        else
+        {
+            <span>Grade: <strong>@grade</strong> : @maxScore ( <strong>%@percentage</strong> )</span>
+        }
+    </RadzenText>
+    <RadzenButton Text="Open" Click="HandleClick" Style="flex: 1 1 auto; max-width: 120px" />
+</RadzenCard>
+@code {
+    [Parameter]
+    public TestGetDTO dto { get; set; } = new();
+    [Parameter]
+    public long userId { get; set; }
+    public float? grade { get; set; }
+    public float? maxScore { get; set;}
+    public bool isFinal { get; set; } = false;
+    public double percentage { get; set; }
+
+    protected override void OnInitialized()
+    {
+        grade = dto.TestResults.Where(t => t.UserId == userId).FirstOrDefault()?.TotalScore;
+        maxScore = dto.TestResults.Where(t => t.UserId == userId).FirstOrDefault()?.MaxScore;
+        isFinal = dto.TestResults.Where(t => t.UserId == userId).FirstOrDefault()?.IsFinal ?? false;
+        percentage = Math.Round(((grade ?? 0f) / (maxScore ?? 0f)) * 100, 2);
+    }
+
+    private void HandleClick()
+    {
+        Nav.NavigateTo($"/test/{dto.TestId}");
+    }
+}

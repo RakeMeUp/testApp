@@ -1,0 +1,65 @@
+@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using TestApp.Client.Components
+@attribute [Authorize]
+@inject ITestService testService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+
+
+<RadzenStack Orientation="Radzen.Orientation.Horizontal">
+    <RadzenStack AlignItems="Radzen.AlignItems.Center" Style="flex: 1 1 auto; margin-bottom: 50px;">
+        <RadzenText Text="Created Tests" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" />
+        <RadzenButton Text="Create" Click="HandleCreateTest" Style="width:fit-content" Icon="add" />
+        @if (ownedTest.Count() > 0)
+        {
+            @foreach (var test in ownedTest)
+            {
+                <HomeCreatedTestCard dto=test />
+            }
+
+        }
+        else
+        {
+            <RadzenText Text="No tests created yet" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center" Style="margin-top:100px;" />
+        }
+    </RadzenStack>
+    <RadzenStack AlignItems="Radzen.AlignItems.Center" Style="flex: 1 1 auto; margin-bottom: 50px">
+        <RadzenText Text="Joined Tests" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center"  />
+        <RadzenButton Text="Join" Click="HandleJoinTest" Style="width:fit-content" Icon="add" />
+        @if (joinedTest.Count() > 0)
+        {
+            @foreach (var test in joinedTest)
+            {
+                <HomeJoinedTestCard dto=test userId=userId  />
+            }
+        }
+        else
+        {
+            <RadzenText Text="No tests joined to yet" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center" Style="margin-top:100px;" />
+        }
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private IEnumerable<TestGetDTO> ownedTest { get; set; }= new List<TestGetDTO>();
+    private IEnumerable<TestGetDTO> joinedTest { get; set; } = new List<TestGetDTO>();
+    private long userId { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var provider = (AuthStateProvider)AuthStateProvider;
+        userId = await provider.GetCurrentUserId();
+        ownedTest = await testService.GetByOwnerAsync(userId);
+        joinedTest = await testService.GetByParticipationAsync(userId);
+    }
+
+    private void HandleCreateTest()
+    {
+        Nav.NavigateTo("/test/create");
+    }
+    private void HandleJoinTest()
+    {
+        Nav.NavigateTo("/test/join");
+    }
+}

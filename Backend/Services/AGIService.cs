@@ -2,6 +2,7 @@
 using Backend.Models;
 using Backend.Services.Interfaces;
 using OpenAI.Chat;
+using Shared.Models;
 using System.Text.Json;
 
 namespace Backend.Services
@@ -19,7 +20,7 @@ namespace Backend.Services
 
         public async Task<AGIEvaluateResponseDTO> Evaluate(TestEvaluationDTO dto)
         {
-            var prompt = AGIEvaluationConfig.DTOToPrompt(dto) ?? throw new ArgumentNullException(nameof(dto));
+            var prompt = AGIEvaluationConfig.EvalDTOToPrompt(dto) ?? throw new ArgumentNullException(nameof(dto));
             List<ChatMessage> messages =
                 [
                     new UserChatMessage(prompt),
@@ -31,7 +32,6 @@ namespace Backend.Services
             };
 
             ChatCompletion completion = await client.CompleteChatAsync(messages, options);
-            Console.WriteLine(completion.Content[0].Text);
 
             using JsonDocument structuredJson = JsonDocument.Parse(completion.Content[0].Text);
 
@@ -46,8 +46,45 @@ namespace Backend.Services
                     {
                         QuestionId = q.GetProperty("question_id").GetInt64(),
                         Explanation = q.GetProperty("explanation").ToString(),
-                        Grade = q.GetProperty("grade").GetSingle()
-                    }
+                        Grade = q.GetProperty("grade").GetSingle(),
+                        MaxGrade = q.GetProperty("max_grade").GetSingle()
+                }
+                );
+            }
+            return resp;
+        }
+
+        public async Task<AGIQuestionCreationResponse> CreateQuestion(AGIQuestionCreationDTO dto)
+        {
+            var prompt = AGIQuestionCreationConfig.CreationDTOToPrompt(dto) ?? throw new ArgumentNullException(nameof(dto));
+            List<ChatMessage> messages =
+                [
+                    new UserChatMessage(prompt),
+                ];
+
+            ChatCompletionOptions options = new()
+            {
+                ResponseFormat = AGIQuestionCreationConfig.CreateResponseFormat()
+            };
+
+            ChatCompletion completion = await client.CompleteChatAsync(messages, options);
+
+            using JsonDocument structuredJson = JsonDocument.Parse(completion.Content[0].Text);
+
+            var resp = new AGIQuestionCreationResponse()
+            {
+                Topic = structuredJson.RootElement.GetProperty("topic").ToString(),
+                Strictness = structuredJson.RootElement.GetProperty("strictness").ToString(),
+                MaximumTotalGrade = structuredJson.RootElement.GetProperty("maximum_total_grade").GetInt32(),
+                Questions = []
+            };
+            foreach (var q in structuredJson.RootElement.GetProperty("questions").EnumerateArray())
+            {
+                resp.Questions.Add(new AGIQuestionResponse()
+                {
+                    QuestionText = q.GetProperty("question_text").GetString(),
+                    MaxGrade = q.GetProperty("max_grade").GetInt32()
+                }
                 );
             }
             return resp;

@@ -1,0 +1,166 @@
+@page "/test/{id:long}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using TestApp.Client.Components
+@inject ITestService testService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenCard Style="padding-left: 50px; padding-right: 50px; padding: 50px;">
+    <div style="position: relative">
+        <RadzenButton Click="HandleLeave" Style="position: absolute; right: 0px" Size="Radzen.ButtonSize.Medium" ButtonStyle="Radzen.ButtonStyle.Secondary">
+            Leave Test
+        </RadzenButton>
+        <RadzenText Text="@dto.TestTitle" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 20px" />
+    </div>
+    <EditForm class="d-flex flex-column align-items-center;" Model="@answerDto" OnValidSubmit="CheckEmptyAnswers">
+        <RadzenStack Style="margin-bottom: 50px;">
+            <RadzenText Text="@dto.TestDescription" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" Style="text-align: justify; margin-bottom: 20px" />
+            @if (showEval)
+            {
+                @if (dto != null && questions != null)
+                {
+                    @for(int i = 0; i < questions.Count(); i++)
+                    {
+                        <TestFilledQuestionCard dto="questions.ElementAtOrDefault(i)" userId="userId" index="i" />
+                    }
+                }
+            }
+            else
+            {
+                @if (dto != null && answerDto.Answers != null)
+                {
+                    @for (int i = 0; i < answerDto.Answers.Count(); i++)
+                    {
+                        <TestQuestionCard dto="questions.Where(q => q.QuestionId == answerDto.Answers.ElementAt(i).QuestionId).FirstOrDefault()" answer="answerDto.Answers.ElementAt(i)" index="i" />
+                    }
+                }
+            }
+        </RadzenStack>
+            @if (!showEval)
+            {
+                <RadzenButton Text="Submit" ButtonType="Radzen.ButtonType.Submit" class="mx-auto" IsBusy="@isBusy" Disabled="@isSubmitDisabled"Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
+            }
+    </EditForm>
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public long id { get; set; }
+    private TestAnswerDTO answerDto { get; set; } = new();
+    private TestGetDTO dto { get; set; } = new();
+    private IEnumerable<QuestionGetDTO> questions { get; set; } = new List<QuestionGetDTO>();
+    private long userId { get; set; }
+    private bool isBusy { get; set; }
+    private bool isSubmitDisabled { get; set; }
+    private bool showEval { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var provider = (AuthStateProvider)AuthStateProvider;
+        userId = await provider.GetCurrentUserId();
+        dto = await testService.GetAsync(id);
+
+        if (dto.OwnerId == userId)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Redirect", Detail = "You are the owner of this test, redirected to test owner page", Duration = 3000 });
+            Nav.NavigateTo($"/test/owner/{id}");
+        }
+
+        questions = dto.Questions;
+
+        if (dto.TestResults.Where(tr => tr.UserId == userId).Any())
+        {
+            //test already answered, show evals
+            showEval = true;
+            isSubmitDisabled = true;
+        }
+        else
+        {
+            InitAnswerDTO(answerDto, questions);
+        }
+    }
+
+    private void InitAnswerDTO(TestAnswerDTO dto, IEnumerable<QuestionGetDTO> questions)
+    {
+        List<Answer> answers = [];
+        foreach(var q in questions)
+        {
+            answers.Add(
+                new Answer
+                {
+                    QuestionId = q.QuestionId,
+                    AnswerText = ""
+                }
+            );
+        }
+        dto.Answers = answers;
+    }
+
+    private async Task CheckEmptyAnswers()
+    {
+        if (answerDto.Answers.Any(a => string.IsNullOrEmpty(a.AnswerText)))
+        {
+            await Confirm("Are you sure you want to submit your answers? There are questions left empty.");
+        }
+        else if (answerDto.Answers.All(a => string.IsNullOrEmpty(a.AnswerText)))
+        {
+            await Confirm("You gave no answers to any questions. Are you sure you want to submit your test?");
+        }
+        else
+        {
+            await SubmitAnswers();
+        }
+    }
+
+    private async Task Confirm(string msg)
+    {
+        isBusy = true;
+        isSubmitDisabled = true;
+        var result = await DialogService.Confirm(msg, "Confirm Submition", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        isBusy = false;
+        isSubmitDisabled = false;
+        if (result.HasValue && result.Value == true)
+        {
+            await SubmitAnswers();
+        }
+    }
+
+    private async Task SubmitAnswers()
+    {
+        isBusy = true;
+        isSubmitDisabled = true;
+        var resp = await testService.AnswerTest(id, answerDto);
+        if (resp.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Test successfully filled and sent for evaluation!", Duration = 3000 });
+            isBusy = false;
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await resp.Content.ReadAsStringAsync(), Duration = 3000 });
+        }
+    }
+
+    private async Task HandleLeave()
+    {
+        var result = await DialogService.Confirm("Are you sure you want to leave this test? Your results will be lost.", "Confirm Submition", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (result.HasValue && result.Value == true)
+        {
+            var res = await testService.LeaveTest(id);
+            if (res.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Successfully left test!", Duration = 3000 });
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+            }
+        }
+    }
+
+}

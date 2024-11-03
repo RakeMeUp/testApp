@@ -7,6 +7,7 @@
     using Backend.Services.Interfaces;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
+    using Shared.Models;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -30,7 +31,7 @@
             }
         }
         [HttpGet("owner/{userId}")]
-        public async Task<ActionResult<TestGetDTO>> GetTestsByOwnerAsync([FromRoute] long userId)
+        public async Task<ActionResult<IEnumerable<TestGetDTO>>> GetTestsByOwnerAsync([FromRoute] long userId)
         {
             try
             {
@@ -43,7 +44,7 @@
             }
         }
         [HttpGet("participation/{userId}")]
-        public async Task<ActionResult<TestGetDTO>> GetTestsByParticipationAsync([FromRoute] long userId)
+        public async Task<ActionResult<IEnumerable<TestGetDTO>>> GetTestsByParticipationAsync([FromRoute] long userId)
         {
             try
             {
@@ -87,6 +88,10 @@
                     throw new InvalidOperationException("User is not joined to the test");
 
                 }
+                if (test.TestResults.Where(tr=>tr.UserId == userId).Any())
+                {
+                    throw new InvalidOperationException("User can't answer twice, please delete existing results and answers to retry");
+                }
                 await gradeService.ProposeTestAsync(testId, dto);
                 return NoContent();
             }
@@ -96,7 +101,7 @@
             }
         }
         [HttpPost("{testId}/approve")]
-        public async Task<ActionResult<TestGetDTO>> ApproveTest([FromRoute] long testId, [FromBody] TestApproveDTO dto)
+        public async Task<IActionResult> ApproveTest([FromRoute] long testId, [FromBody] TestApproveDTO dto)
         {
             try
             {
@@ -114,8 +119,8 @@
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("tests/{testId}/join")]
-        public async Task<ActionResult> JoinTest([FromRoute]long testId)
+        [HttpPost("{testId}/join")]
+        public async Task<IActionResult> JoinTest([FromRoute]long testId)
         {
             try
             {
@@ -137,8 +142,8 @@
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("tests/{testId}/leave")]
-        public async Task<ActionResult> LeaveTest([FromRoute] long testId)
+        [HttpPost("{testId}/leave")]
+        public async Task<IActionResult> LeaveTest([FromRoute] long testId)
         {
             try
             {

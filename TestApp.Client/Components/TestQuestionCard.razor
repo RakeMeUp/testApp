@@ -1,0 +1,29 @@
+﻿<RadzenCard Style="padding: 30px">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal">
+        <RadzenStack Style="flex-grow: 1;">
+            <RadzenText Text="@((index+1) + ", " + question)" TextStyle="Radzen.Blazor.TextStyle.H6" />
+            <RadzenTextArea @bind-Value="answer.AnswerText" class="rz-w-100" Placeholder="Answer Here" Rows="4"></RadzenTextArea>
+        </RadzenStack>
+        <RadzenStack>
+            <RadzenText Text="Max Score:" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center" />
+            <RadzenText Text="@maxGrade.ToString()" TextStyle="Radzen.Blazor.TextStyle.H4" TextAlign="Radzen.TextAlign.Center" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+@code {
+    [Parameter]
+    public QuestionGetDTO dto { get; set; } = new(); 
+    [Parameter]
+    public Answer answer { get; set; } = new();
+    [Parameter]
+    public int index { get; set; }
+    public float maxGrade { get; set; }
+    public string question { get; set; }
+
+    protected override void OnInitialized()
+    {
+        maxGrade = dto.MaxGrade;
+        question = dto.QuestionText;
+    }
+
+}

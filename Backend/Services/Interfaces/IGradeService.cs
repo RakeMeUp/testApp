@@ -1,4 +1,5 @@
 ﻿using Backend.Models;
+using Shared.Models;
 
 namespace Backend.Services.Interfaces
 {

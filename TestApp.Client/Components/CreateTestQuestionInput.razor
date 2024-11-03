@@ -1,0 +1,22 @@
+﻿<RadzenStack Orientation="Radzen.Orientation.Horizontal">
+    <RadzenTextBox @bind-Value="dto.QuestionText" class="flex-grow-1" Placeholder="Question Text" />
+    <RadzenLabel Text="Max Grade" Component="maxGradeInput" Style="margin-right: 10px;" />
+    <RadzenNumeric @bind-Value="dto.MaxGrade" Name="maxGradeInput" Min="1" Style="width: 150px" Placeholder="Max Grade" />
+    @if(!string.IsNullOrEmpty(dto.QuestionText) || dto.MaxGrade != 0)
+    {
+        <RadzenButton Click="HandleClear" Icon="close" class="rz-w-fit-content" ButtonStyle="Radzen.ButtonStyle.Warning" Size="Radzen.ButtonSize.Medium" />
+    }
+    <RadzenButton Click="() => HandleDelete.InvokeAsync(dto)" Icon="delete" class="rz-w-fit-content" ButtonStyle="Radzen.ButtonStyle.Secondary" Size="Radzen.ButtonSize.Medium" />
+</RadzenStack>
+@code {
+    [Parameter]
+    public QuestionPostDTO dto { get; set; } = new();
+    [Parameter]
+    public EventCallback<QuestionPostDTO> HandleDelete { get; set; }
+
+    private void HandleClear()
+    {
+        dto.MaxGrade = 0;
+        dto.QuestionText = "";
+    }
+}
