@@ -15,6 +15,7 @@ namespace Backend.Config
         Questions should have a question text, and a maximum achiavable grade for that one question.
         You will recieve a Maximum Total Grade, please make sure the max grade for the questions add up to that number.
         Grades should be whole numbers.
+        Please do not number the questions.
         You will recieve NumberOfQuestions, please make sure you give as many questions as many is specified in it.
         """;
         public static ChatResponseFormat CreateResponseFormat()

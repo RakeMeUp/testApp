@@ -1,12 +1,21 @@
 ﻿@inject NavigationManager Nav
 
-<RadzenCard Style="display: flex; align-items: center; justify-content: space-between; padding: 10px; padding-left: 30px; padding-right: 30px; flex-wrap: wrap;">
+<RadzenCard Style="display: flex; align-items: center; justify-content: space-between; padding: 10px; padding-left: 30px; padding-right: 30px; flex-wrap: wrap;width:100%">
     <RadzenText Style="text-align: center; flex: 1 1 100%; margin-bottom: 10px; font-size: 18px">
         <strong>@dto.TestTitle</strong>
     </RadzenText>
-    <RadzenBadge Text="@(isFinal ? "Final" : "AGI Evaluated")"
-                 BadgeStyle="@(isFinal ? BadgeStyle.Info : BadgeStyle.Warning)"
-                 Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    @if (grade != null)
+    {
+        <RadzenBadge Text="@(isFinal ? "Final" : "AGI Evaluated")"
+                     BadgeStyle="@(isFinal ? BadgeStyle.Info : BadgeStyle.Warning)"
+        Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    }
+    else
+    {
+        <RadzenBadge Text="Not filled yet"
+                     BadgeStyle="BadgeStyle.Danger"
+                     Style="flex: 1 1 auto; text-align: center; margin-bottom: 10px; max-width: 120px" />
+    }
     <RadzenText Style="text-align: center; flex: 1 1 auto;">
         @if (grade is null){
             <span>No Grading Yet</span>

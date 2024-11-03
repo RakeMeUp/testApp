@@ -9,7 +9,12 @@
 @inject DialogService DialogService
 
 <RadzenCard Style="padding-left: 50px; padding-right: 50px; padding: 50px;">
-    <RadzenText Text="@dto.TestTitle" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 20px" />
+    <div style="position: relative">
+        <RadzenButton Click="HandleLeave" Style="position: absolute; right: 0px" Size="Radzen.ButtonSize.Medium" ButtonStyle="Radzen.ButtonStyle.Secondary">
+            Leave Test
+        </RadzenButton>
+        <RadzenText Text="@dto.TestTitle" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 20px" />
+    </div>
     <EditForm class="d-flex flex-column align-items-center;" Model="@answerDto" OnValidSubmit="CheckEmptyAnswers">
         <RadzenStack Style="margin-bottom: 50px;">
             <RadzenText Text="@dto.TestDescription" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" Style="text-align: justify; margin-bottom: 20px" />
@@ -17,9 +22,9 @@
             {
                 @if (dto != null && questions != null)
                 {
-                    @foreach (var q in questions)
+                    @for(int i = 0; i < questions.Count(); i++)
                     {
-                        <FilledQuestionTestCard dto="q" userId="userId" />
+                        <TestFilledQuestionCard dto="questions.ElementAtOrDefault(i)" userId="userId" index="i" />
                     }
                 }
             }
@@ -27,14 +32,17 @@
             {
                 @if (dto != null && answerDto.Answers != null)
                 {
-                    @foreach (var a in answerDto.Answers)
+                    @for (int i = 0; i < answerDto.Answers.Count(); i++)
                     {
-                        <QuestionTestCard dto="questions.Where(q => q.QuestionId == a.QuestionId).FirstOrDefault()" answer="a" />
+                        <TestQuestionCard dto="questions.Where(q => q.QuestionId == answerDto.Answers.ElementAt(i).QuestionId).FirstOrDefault()" answer="answerDto.Answers.ElementAt(i)" index="i" />
                     }
                 }
             }
         </RadzenStack>
-            <RadzenButton Text="Submit" ButtonType="Radzen.ButtonType.Submit" class="mx-auto" IsBusy="@isBusy" Disabled="@isSubmitDisabled"Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
+            @if (!showEval)
+            {
+                <RadzenButton Text="Submit" ButtonType="Radzen.ButtonType.Submit" class="mx-auto" IsBusy="@isBusy" Disabled="@isSubmitDisabled"Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
+            }
     </EditForm>
 </RadzenCard>
 
@@ -119,7 +127,7 @@
             await SubmitAnswers();
         }
     }
-    
+
     private async Task SubmitAnswers()
     {
         isBusy = true;
@@ -128,11 +136,31 @@
         if (resp.IsSuccessStatusCode)
         {
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Test successfully filled and sent for evaluation!", Duration = 3000 });
-            Nav.NavigateTo("/");
             isBusy = false;
+            Nav.NavigateTo("/");
         }
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Error", Detail = resp.ReasonPhrase, Duration = 3000 });
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await resp.Content.ReadAsStringAsync(), Duration = 3000 });
+        }
     }
 
-    
+    private async Task HandleLeave()
+    {
+        var result = await DialogService.Confirm("Are you sure you want to leave this test? Your results will be lost.", "Confirm Submition", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (result.HasValue && result.Value == true)
+        {
+            var res = await testService.LeaveTest(id);
+            if (res.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Successfully left test!", Duration = 3000 });
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+            }
+        }
+    }
+
 }

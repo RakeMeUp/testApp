@@ -10,19 +10,26 @@
 @inject NotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px;">
+<RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H2" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 50px" />
+<RadzenCard class="rz-w-fit-content mx-auto">
 
     <RadzenTemplateForm Data=@("LoginWithRegister")>
         <RadzenLogin AllowResetPassword="false"
                      Login=@(args => OnLogin(args))
                      Register=@(args => OnRegister())
-                     Username=@userName Password=@password />
+                     Username=@userName Password=@password Style="float: none" AllowRememberMe="false" ShowLoginButton="true" />
     </RadzenTemplateForm>
 
 </RadzenCard>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string ReturnUrl { get; set; } = "/";
     private bool isAuthenticated;
+    private string userName = "";
+    private string password = "";
+    private string err = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -34,10 +41,7 @@
             Nav.NavigateTo("/");
         }
     }
-
-    private string userName = "";
-    private string password = "";
-    private string err = "";
+    
     private async Task OnLogin(LoginArgs args)
     {
         try
@@ -49,10 +53,10 @@
                     Password = args.Password
                 }
             );
-            Nav.NavigateTo("/");
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Login successful!", Duration = 3000 });
+            Nav.NavigateTo(ReturnUrl??"/");
         }
-        catch (HttpRequestException e)
+        catch (Exception e)
         {
             err = $"Login fail: {e}";
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Login Error!", Duration = 3000 });

@@ -7,11 +7,11 @@ namespace TestApp.Client.Services.Interfaces
         Task<TestGetDTO> GetAsync(long id);
         Task<IEnumerable<TestGetDTO>> GetByOwnerAsync(long ownerId);
         Task<IEnumerable<TestGetDTO>> GetByParticipationAsync(long ownerId);
-        void CreateTest(TestPostDTO post);
-        void DeleteTest(long id);
+        Task<HttpResponseMessage> CreateTest(TestPostDTO post);
+        Task<HttpResponseMessage> DeleteTest(long id);
         Task<HttpResponseMessage> AnswerTest(long id, TestAnswerDTO answers);
-        void ApproveTest(long id, TestApproveDTO answers);
-        void JoinTest(long id);
-        void LeaveTest(long id);
+        Task<HttpResponseMessage> ApproveTest(long id, TestApproveDTO answers);
+        Task<HttpResponseMessage> JoinTest(long id);
+        Task<HttpResponseMessage> LeaveTest(long id);
     }
 }

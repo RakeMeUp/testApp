@@ -9,12 +9,12 @@
 @inject NotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<h3>Register</h3>
+<RadzenText Text="Register" TextStyle="Radzen.Blazor.TextStyle.H2" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 50px" />
 
-<RadzenTemplateForm Data="@registerModel" TItem="RegisterDTO" Submit="RegisterUser" InvalidSubmit="HandleInvalidSubmit" Style="display: flex; padding: 20px" class="justify-content-center align-items-center">
+<RadzenTemplateForm Data="@registerModel" TItem="RegisterDTO" Submit="RegisterUser" InvalidSubmit="HandleInvalidSubmit" Style="display: flex; margin-bottom: 30px" class="justify-content-center align-items-center">
     <DataAnnotationsValidator/>
-    <RadzenFieldset Style="width: 1045px; padding: 20px; visibility: visible">
-        <RadzenFieldset Legend="Create an Account" Style="padding-left: 100px; padding-right: 100px; display: flex; padding: 20px" class="align-items-center justify-content-center">
+    <RadzenFieldset Style="padding: 20px; visibility: visible">
+        <RadzenFieldset Legend="Create an Account" Style="display: flex; padding: 20px; border: none" class="align-items-center justify-content-center">
             <RadzenLabel Text="Username" />
             <RadzenTextBox @bind-Value="registerModel.UserName" Style="width:100%" Name="Username" />
             <ValidationMessage For="@(() => registerModel.UserName)" />

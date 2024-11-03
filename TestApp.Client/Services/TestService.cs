@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Shared.Models;
+﻿using Shared.Models;
 using System.Net.Http.Json;
 using TestApp.Client.Services.Interfaces;
 
@@ -12,19 +11,19 @@ namespace TestApp.Client.Services
             return await httpClient.PostAsJsonAsync($"tests/{testId}/answer", answers);
         }
 
-        public void ApproveTest(long id, TestApproveDTO answers)
+        public async Task<HttpResponseMessage> ApproveTest(long testId, TestApproveDTO approvalDTO)
         {
-            throw new NotImplementedException();
+            return await httpClient.PostAsJsonAsync($"tests/{testId}/approve", approvalDTO);
         }
 
-        public void CreateTest(TestPostDTO post)
+        public async Task<HttpResponseMessage> CreateTest(TestPostDTO post)
         {
-            throw new NotImplementedException();
+            return await httpClient.PostAsJsonAsync("tests", post);
         }
 
-        public void DeleteTest(long id)
+        public async Task<HttpResponseMessage> DeleteTest(long id)
         {
-            throw new NotImplementedException();
+            return await httpClient.DeleteAsync($"tests/{id}");
         }
 
         public async Task<TestGetDTO> GetAsync(long id)
@@ -42,14 +41,14 @@ namespace TestApp.Client.Services
             return await httpClient.GetFromJsonAsync<IEnumerable<TestGetDTO>>($"tests/participation/{ownerId}");
         }
 
-        public void JoinTest(long id)
+        public async Task<HttpResponseMessage> JoinTest(long id)
         {
-            throw new NotImplementedException();
+            return await httpClient.PostAsync($"tests/{id}/join", null);
         }
 
-        public void LeaveTest(long id)
+        public async Task<HttpResponseMessage> LeaveTest(long id)
         {
-            throw new NotImplementedException();
+            return await httpClient.PostAsync($"tests/{id}/leave",null);
         }
     }
 }

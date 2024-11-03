@@ -32,7 +32,6 @@ namespace Backend.Services
             };
 
             ChatCompletion completion = await client.CompleteChatAsync(messages, options);
-            Console.WriteLine(completion.Content[0].Text);
 
             using JsonDocument structuredJson = JsonDocument.Parse(completion.Content[0].Text);
 
@@ -69,7 +68,6 @@ namespace Backend.Services
             };
 
             ChatCompletion completion = await client.CompleteChatAsync(messages, options);
-            Console.WriteLine(completion.Content[0].Text);
 
             using JsonDocument structuredJson = JsonDocument.Parse(completion.Content[0].Text);
 

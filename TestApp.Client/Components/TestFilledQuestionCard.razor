@@ -1,14 +1,16 @@
 <RadzenCard Style="padding: 30px">
     <RadzenStack Orientation="Radzen.Orientation.Horizontal">
         <RadzenStack Style="flex-grow: 1;">
-            <RadzenText Text="@dto.QuestionText" TextStyle="Radzen.Blazor.TextStyle.H6" />
+            <RadzenText Text="@((index+1) + ", " + dto.QuestionText)" TextStyle="Radzen.Blazor.TextStyle.H6" />
             <RadzenTextArea Value="@userGrade.Answer" class="rz-w-100" Disabled Rows="4"></RadzenTextArea>
-            <RadzenText Text="@userGrade.Explanation" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center" Style="text-align: justify; font-style: italic; color: var(--rz-info)" />
+            <RadzenText Text="@userGrade.Explanation" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center"
+                        Style=@(isFinal ? "text-align: justify;" : "text-align: justify; font-style: italic; color: var(--rz-info)") />
         </RadzenStack>
         <RadzenStack>
             <RadzenText Text="Score:" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center" />
             <RadzenStack Gap="0">
-                <RadzenText Text="@userGrade.GradeObtained.ToString()" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center" Style="color: var(--rz-info); font-style: italic" />
+                <RadzenText Text="@userGrade.GradeObtained.ToString()" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center"
+                            Style=@(isFinal ? "" : "color: var(--rz-info); font-style: italic") />
                 <RadzenText Text="/" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" TextAlign="Radzen.TextAlign.Center" />
                 <RadzenText Text="@dto.MaxGrade.ToString()" TextStyle="Radzen.Blazor.TextStyle.H5" TextAlign="Radzen.TextAlign.Center" Style="font-style: normal; font-weight: bold" />
             </RadzenStack>
@@ -21,10 +23,14 @@
     public QuestionGetDTO dto { get; set; } = new();
     [Parameter]
     public long userId { get; set; }
-    public QuestionGradeGetDTO userGrade { get; set; } = new();
+    [Parameter]
+    public int index { get; set; }
+    private bool isFinal { get; set; }
+    private QuestionGradeGetDTO userGrade { get; set; } = new();
     protected override void OnInitialized()
     {
         userGrade = dto.QuestionGrades.Where(qg => qg.UserId == userId).FirstOrDefault() ?? throw new Exception("No grade for this question for this user");
+        isFinal = userGrade.IsApproved;
     }
 
 }

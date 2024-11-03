@@ -5,7 +5,7 @@
 @code {
     protected override void OnInitialized()
     {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Redirect", Detail = "User must be signed in to access this page", Duration = 3000 });
         Navigation.NavigateTo("/login");
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "User must be signed in to access this page", Duration = 3000 });
     }
 }

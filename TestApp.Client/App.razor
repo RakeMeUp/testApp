@@ -1,10 +1,14 @@
 ﻿@using TestApp.Client.Pages
+@inject NavigationManager Navigation
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    <Redirect />
+                    @{
+                        var returnUrl = Navigation.Uri ?? "/";
+                        Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+                    }
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />

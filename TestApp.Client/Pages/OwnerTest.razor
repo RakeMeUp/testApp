@@ -2,7 +2,9 @@
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
 @using TestApp.Client.Components
+@using TestApp.Client.Models
 @inject ITestService testService
+@inject IQRService qrService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
 @inject NotificationService NotificationService
@@ -10,44 +12,64 @@
 @inject IJSRuntime ijs
 
 <RadzenCard Style="padding-left: 50px; padding-right: 50px; padding: 50px; display: flex" class="flex-column">
-    <RadzenText Text="@(isUserSelected ?  "Approving " + dto.TestTitle : dto.TestTitle)" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 20px" />
+    <div style="position: relative">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Style="position: absolute; right: 0px">
+            <RadzenButton Text="Share" Click="HandleShareTest" Size="Radzen.ButtonSize.Medium" Icon="share" ButtonStyle="Radzen.ButtonStyle.Dark" Variant="Radzen.Variant.Filled" />
+            <RadzenButton Text="Delete" Click="HandleDeleteTest" Size="Radzen.ButtonSize.Medium" Icon="delete" ButtonStyle="Radzen.ButtonStyle.Secondary" />
+            @if (isUserSelected)
+            {
+                <RadzenButton Text="Close" Click="HandleExitApproval" Size="Radzen.ButtonSize.Medium" Icon="close" ButtonStyle="Radzen.ButtonStyle.Primary" />
+            }
+        </RadzenStack>
+        <RadzenText Text="@(isUserSelected ?  "Approving " + dto.TestTitle : dto.TestTitle)" TextStyle="Radzen.Blazor.TextStyle.H3" TextAlign="Radzen.TextAlign.Center" Style="margin-bottom: 20px"/>
+    </div>
     <EditForm class="d-flex flex-column align-items-center;" Model="@approveDto" OnValidSubmit="HandleSubmit">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal">
             <RadzenStack Style="margin-bottom: 50px; flex: 1; flex-basis: 80%; padding-left: 20px; padding-right: 20px">
                 <RadzenText Text="Questions" TextStyle="Radzen.Blazor.TextStyle.H4" Style="text-align: justify; margin-bottom: 20px" />
                 @if (isUserSelected)
                 {
-                    @foreach (var g in approveDto.GradeEdits)
+                    @for (int i = 0; i < approveDto.GradeEdits.Count(); i++)
                     {
-                        <QuestionGradeCard questionDto="dto.Questions.Where(q => q.QuestionId == g.QuestionId).FirstOrDefault()" userId="selectedUserId" gradeDto="g"/>
+                        <OwnerTestQuestionGradeCard 
+                            questionDto="dto.Questions.Where(q => q.QuestionId == approveDto.GradeEdits.ElementAt(i).QuestionId).FirstOrDefault()"
+                            userId="selectedUserId"
+                            gradeDto="approveDto.GradeEdits.ElementAt(i)"
+                            index="i" />
                     }
                 }
                 else
                 {
-                    @foreach (var q in dto.Questions)
+                    @for (int i = 0; i < dto.Questions.Count(); i++)
                     {
-                        <QuestionOwnerCard dto="q" />
+                        <OwnerTestQuestionCard 
+                            dto="dto.Questions.ElementAt(i)"
+                            index="i" />
                     }
                 }
-            </RadzenStack>
+                </RadzenStack>
             <RadzenStack Style="margin-bottom: 50px;flex: 1; flex-basis: 20%;">
-                <RadzenText Text="@(isUserSelected ? "Approval for:":"Participants:" )" TextStyle="Radzen.Blazor.TextStyle.H4" Style="text-align: right; margin-bottom: 20px" />
+                <RadzenText Text="@(isUserSelected ? "Approval for:": "Participants:" )" TextStyle="Radzen.Blazor.TextStyle.H4" Style="text-align: right;" />
+                
                 @if (isUserSelected)
                 {
-                    <UserCard dto="dto.TestResults.Where(tr=>tr.UserId == selectedUserId).FirstOrDefault()" HandleEdit="HandleUserSelection" />
+                    <OwnerTestUserCard dto="dto.TestResults.Where(tr=>tr.UserId == selectedUserId).FirstOrDefault()" HandleEdit="HandleUserSelection" />
                 }
                 else
                 {
+                    <RadzenText TextStyle="Radzen.Blazor.TextStyle.Subtitle1" Style="text-align: right; margin-bottom: 20px">
+                        Participants who hasn't filled the test yet: <strong>@unfilledTestCount</strong>
+                    </RadzenText>
                     @foreach (var t in dto.TestResults)
                     {
-                        <UserCard dto="t" HandleEdit="HandleUserSelection" showEdit />
+                        <OwnerTestUserCard dto="t" HandleEdit="HandleUserSelection" showEdit />
                     }
                 }
             </RadzenStack>
         </RadzenStack>
         @if (isUserSelected)
         {
-            <RadzenButton Text="Submit" ButtonType="Radzen.ButtonType.Submit" class="mx-auto" Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
+            <RadzenButton Text="Submit" ButtonType="Radzen.ButtonType.Submit" IsBusy="@isBusy" Disabled="@isSubmitDisabled" class="mx-auto" Style="padding-left: 30px; padding-right: 30px; padding-top: 15px; padding-bottom: 15px" Variant="Radzen.Variant.Filled" ButtonStyle="Radzen.ButtonStyle.Primary" />
         }
     </EditForm>
 </RadzenCard>
@@ -57,14 +79,19 @@
     private long userId { get; set; }
     private long selectedUserId { get; set; } = 0;
     private bool isUserSelected { get; set; }
-    private TestGetDTO dto { get; set; } = new();
-    private TestApproveDTO approveDto { get; set; } = new();
+    private TestGetDTO dto { get; set; } = new TestGetDTO { Questions = new List<QuestionGetDTO>(), TestResults = new List<UserTestResultGetDTO>() };
+    private IntermediateApproveDTO approveDto { get; set; } = new IntermediateApproveDTO { GradeEdits = new List<IntermediateApproveGradeDTO>() };
+    private TestApproveDTO finalDTO { get; set; } = new();
+    private bool isBusy { get; set; }
+    private bool isSubmitDisabled { get; set; }
+    private int unfilledTestCount { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var provider = (AuthStateProvider)AuthStateProvider;
         userId = await provider.GetCurrentUserId();
         dto = await testService.GetAsync(id);
+        unfilledTestCount = dto.ParticipatedUserIDs.Count() - dto.TestResults.Count();
         if (dto.OwnerId != userId)
         {
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Redirect", Detail = "You are Not the owner of this test, redirected to homepage", Duration = 3000 });
@@ -79,19 +106,19 @@
         InitApproveDto(approveDto, id, dto);
     }
 
-    private void InitApproveDto(TestApproveDTO dto, long userId, TestGetDTO testDto)
+    private void InitApproveDto(IntermediateApproveDTO dto, long userId, TestGetDTO testDto)
     {
         dto.UserId = userId;
-        List<TestApproveGradeDTO> testApproveGrades = [];
+        List<IntermediateApproveGradeDTO> testApproveGrades = [];
         foreach(var q in testDto.Questions)
         {
             testApproveGrades.Add
             (
-                new TestApproveGradeDTO
+                new IntermediateApproveGradeDTO
                 {
                     QuestionId = q.QuestionId,
-                    CorrectedGrade = -1,
-                    Explanation = ""
+                    CorrectedGrade = null,
+                    Explanation = null
                 }
             );
         }
@@ -99,7 +126,115 @@
     }
     private async Task HandleSubmit()
     {
-        await ijs.InvokeVoidAsync("console.log", approveDto);
+        finalDTO = IntermediateToTestDTO(approveDto);
+        await ijs.InvokeVoidAsync("console.log", finalDTO);
+        await Confirm("Are you sure you want to submit this approval?");
+    }
 
+    private async Task Confirm(string msg)
+    {
+        isBusy = true;
+        isSubmitDisabled = true;
+        string changedGradesSummary = GetChangedGradesSummary();
+        string confirmationMessage = $"{msg}<br /><br />Changes:<br />{changedGradesSummary}";
+        var result = await DialogService.Confirm(confirmationMessage, "Confirm Submition", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        isBusy = false;
+        isSubmitDisabled = false;
+        if (result.HasValue && result.Value == true)
+        {
+            await SubmitApproval();
+        }
+    }
+    private async Task SubmitApproval()
+    {
+        isBusy = true;
+        isSubmitDisabled = true;
+        var resp = await testService.ApproveTest(dto.TestId, finalDTO);
+        if (resp.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Test successfully approved!", Duration = 3000 });
+            isBusy = false;
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Error", Detail = resp.ReasonPhrase, Duration = 3000 });
+        }
+    }
+    private TestApproveDTO IntermediateToTestDTO(IntermediateApproveDTO dtoIn)
+    {
+        TestApproveDTO dtoOut = new();
+        dtoOut.UserId = dtoIn.UserId;
+        List<TestApproveGradeDTO> gradeList = [];
+        foreach (var edit in dtoIn.GradeEdits)
+        {
+            if (edit.CorrectedGrade.HasValue)
+            {
+                TestApproveGradeDTO grade = new();
+                grade.QuestionId = edit.QuestionId;
+                grade.CorrectedGrade = edit.CorrectedGrade.Value;
+                if (!string.IsNullOrWhiteSpace(edit.Explanation))
+                {
+                    grade.Explanation = edit.Explanation;
+                }
+                gradeList.Add(grade);
+            }
+        }
+        dtoOut.GradeEdits = gradeList;
+        return dtoOut;
+    }
+
+    private string GetChangedGradesSummary()
+    {
+        var modifiedGrades = approveDto.GradeEdits
+            .Where(gradeEdit => gradeEdit.CorrectedGrade.HasValue)
+            .Select(gradeEdit =>
+                $"Question ID: {gradeEdit.QuestionId}, New Grade: {gradeEdit.CorrectedGrade}, Explanation: {gradeEdit.Explanation ?? "None"}<br />")
+            .ToList();
+
+        if (!modifiedGrades.Any())
+        {
+            return "No changes have been made to grades.";
+        }
+
+        return string.Join("\n", modifiedGrades);
+    }
+    private void HandleExitApproval()
+    {
+        isUserSelected = false;
+        selectedUserId = 0;
+        approveDto = new();
+    }
+    private async Task HandleDeleteTest()
+    {
+        string msg = "Are you sure you want to <strong>DELETE</strong> the test? This will <strong>DELETE</strong> all questions, test results, and gradings.";
+        var result = await DialogService.Confirm(msg, "DELETING TEST", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (result.HasValue && result.Value == true)
+        {
+            var secondResult = await DialogService.Confirm("Are you absolutely sure? This is unreversable!", "CONFIRM DELETING TEST", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+            if (secondResult.HasValue && secondResult.Value == true)
+            {
+                var res = await testService.DeleteTest(id);
+                if (res.IsSuccessStatusCode)
+                {
+                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Successfully deleted test!", Duration = 3000 });
+                    Nav.NavigateTo("/");
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = await res.Content.ReadAsStringAsync(), Duration = 3000 });
+                }
+            }
+        }
+    }
+    private async Task HandleShareTest()
+    {
+        await DialogService.OpenAsync("Sharing this test", ds =>
+        @<RadzenStack AlignItems="AlignItems.Center" Gap="2rem" class="rz-p-12">
+            <RadzenImage Path="@qrService.GetQRCodeURI(id)" Style="width: 200px;" AlternateText="qrcode" />
+        <RadzenText TextStyle="TextStyle.H6">Test ID: <strong>@id</strong></RadzenText>
+        </RadzenStack>, 
+        new DialogOptions() { CloseDialogOnOverlayClick = true });
     }
 }

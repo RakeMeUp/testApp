@@ -1,7 +1,7 @@
 ﻿<RadzenCard Style="padding: 30px">
     <RadzenStack Orientation="Radzen.Orientation.Horizontal">
         <RadzenStack Style="flex-grow: 1;">
-            <RadzenText Text="@(index + ", " + question)" TextStyle="Radzen.Blazor.TextStyle.H6" />
+            <RadzenText Text="@((index+1) + ", " + question)" TextStyle="Radzen.Blazor.TextStyle.H6" />
             <RadzenTextArea @bind-Value="answer.AnswerText" class="rz-w-100" Placeholder="Answer Here" Rows="4"></RadzenTextArea>
         </RadzenStack>
         <RadzenStack>
